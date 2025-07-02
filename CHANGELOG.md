@@ -73,6 +73,12 @@ and this project adheres to
 
 - Added `repository` field to `package.json` to fix npm provenance error
 
+## [1.0.3] - 2025-07-XX
+
+### Fixed
+
+- Excluded benchmark files from the npm package by updating `tsconfig.json`
+
 ---
 
 ## [Unreleased]
@@ -87,4 +93,5 @@ and this project adheres to
 [1.0.0]: https://github.com/j-givisiez/pg-parallel/releases/tag/v1.0.0
 [1.0.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.0...v1.0.1
 [1.0.2]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.1...v1.0.2
-[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.2...HEAD
+[1.0.3]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.2...v1.0.3
+[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.3...HEAD

@@ -10,14 +10,5 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "__tests__",
-    "jest.setup.ts",
-    "src/benchmark-*.ts",
-    "src/final-benchmark.ts",
-    "src/benchmark-cpu-sequential.ts",
-    "src/benchmark-mixed-sequential.ts"
-  ]
+  "exclude": ["node_modules", "dist", "__tests__", "jest.setup.ts", "src/benchmark*.ts"]
 }
