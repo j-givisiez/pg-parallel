@@ -42,7 +42,7 @@ and must be installed alongside `pg-parallel`.
 **Requirements:**
 
 - `pg` v8.11.3+ (peer dependency)
-- Node.js v15.14.0 or higher
+- Node.js v18.20.4 or higher
 
 ---
 
