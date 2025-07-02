@@ -67,6 +67,12 @@ and this project adheres to
 - Adjusted test timeouts to prevent intermittent failures in CI
 - Updated documentation and CI workflow with the correct Node.js version
 
+## [1.0.2] - 2025-07-XX
+
+### Fixed
+
+- Added `repository` field to `package.json` to fix npm provenance error
+
 ---
 
 ## [Unreleased]
@@ -80,4 +86,5 @@ and this project adheres to
 
 [1.0.0]: https://github.com/j-givisiez/pg-parallel/releases/tag/v1.0.0
 [1.0.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.0...v1.0.1
-[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.1...HEAD
+[1.0.2]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.1...v1.0.2
+[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.2...HEAD

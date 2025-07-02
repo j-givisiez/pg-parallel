@@ -5,8 +5,12 @@
     "url": "https://github.com/j-givisiez/pg-parallel/issues"
   },
   "homepage": "https://github.com/j-givisiez/pg-parallel#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/j-givisiez/pg-parallel.git"
+  },
   "name": "pg-parallel",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A specialized Node.js wrapper for `node-postgres` that prevents event-loop blocking by offloading heavy CPU tasks and complex transactions to worker threads.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
