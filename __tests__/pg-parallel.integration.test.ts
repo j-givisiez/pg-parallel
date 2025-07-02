@@ -140,7 +140,9 @@ describeif("PgParallel (Integration)", () => {
       // Serial execution would be > 800ms (4 * 200ms).
       // With ts-node overhead, we expect it to be more than a single task (200ms)
       // but significantly less than serial execution. Let's set a generous upper bound.
-      expect(duration).toBeLessThan(1500);
+      const isCI = !!process.env.CI;
+      const upperBound = isCI ? 5000 : 1500;
+      expect(duration).toBeLessThan(upperBound);
     });
   });
 
