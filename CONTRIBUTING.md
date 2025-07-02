@@ -115,4 +115,4 @@ Thank you for contributing to make `pg-parallel` better for everyone! 🙏
 
 ---
 
-*This document is a work in progress. Suggestions to improve it are always welcome!* 
+_This document is a work in progress. Suggestions to improve it are always welcome!_

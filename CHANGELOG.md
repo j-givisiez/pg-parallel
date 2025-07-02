@@ -8,10 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-07-XX
 
 ### Added
+
 - Initial release of `pg-parallel`
 - `PgParallel` class with hybrid pool architecture
 - `query()` method for standard I/O operations using main thread pool
-- `task()` method for pure CPU-bound operations in worker threads  
+- `task()` method for pure CPU-bound operations in worker threads
 - `worker()` method for mixed database/CPU workloads with dedicated client
 - Automatic client lifecycle management (no manual `client.release()` needed)
 - Lazy worker thread initialization for optimal resource usage
@@ -37,15 +38,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Environment configuration example (.env.example)
 
 ### Technical Details
+
 - **Node.js Support**: Requires Node.js v15.14.0 or higher
 - **PostgreSQL**: Compatible with `pg` v8.11.3+ (peer dependency)
 - **Performance**: Minimal overhead for I/O operations, significant gains for CPU-intensive tasks
 - **Error Handling**: Descriptive error messages with proper propagation
 
 ### Breaking Changes
+
 - None (initial release)
 
 ### Migration Guide
+
 - N/A (initial release)
 
 ---
@@ -53,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
+
 - Additional performance optimizations
 - Enhanced error handling and recovery
 - More comprehensive benchmarking tools
