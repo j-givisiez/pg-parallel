@@ -1,0 +1,65 @@
+{
+  "author": "Jonathan Givisiez",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/j-givisiez/pg-parallel/issues"
+  },
+  "homepage": "https://github.com/j-givisiez/pg-parallel#readme",
+  "name": "pg-parallel",
+  "version": "1.0.0",
+  "description": "A specialized Node.js wrapper for `node-postgres` that prevents event-loop blocking by offloading heavy CPU tasks and complex transactions to worker threads.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "docs": "typedoc",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "lint": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "test": "npm run build && jest",
+    "test:dist": "npm run build && node dist-test.js",
+    "benchmark": "ts-node src/benchmark.ts",
+    "deploy": "npm run build && npm publish"
+  },
+  "keywords": [
+    "pg",
+    "postgres",
+    "postgresql",
+    "pool",
+    "parallel",
+    "worker",
+    "worker_threads",
+    "performance",
+    "cpu",
+    "non-blocking",
+    "scaling"
+  ],
+  "engines": {
+    "node": ">=15.14.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.21",
+    "@types/pdfkit": "^0.14.0",
+    "@types/pg": "^8.11.2",
+    "@types/uuid": "^10.0.0",
+    "dotenv": "^17.0.1",
+    "jest": "^29.7.0",
+    "pdfkit": "^0.17.1",
+    "pg": "^8.16.3",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typedoc": "^0.25.0",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "pg": "^8.11.3"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0"
+  }
+}
