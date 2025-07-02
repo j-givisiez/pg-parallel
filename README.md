@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/pg-parallel.svg)](https://www.npmjs.com/package/pg-parallel)
 [![Node.js version](https://img.shields.io/node/v/pg-parallel.svg)](https://nodejs.org/en/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-compatible-blue.svg)](https://www.typescriptlang.org/)
-[![License: MIT](https://img.shields.io/npm/l/pg-parallel.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/npm/l/pg-parallel)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/j-givisiez/pg-parallel/actions/workflows/ci.yml/badge.svg)](https://github.com/j-givisiez/pg-parallel/actions)
 
 **[View on npm](https://www.npmjs.com/package/pg-parallel) ·
