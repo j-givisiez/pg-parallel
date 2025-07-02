@@ -1,0 +1,19 @@
+__tests__/
+coverage/
+
+*.log
+*.tsbuildinfo
+
+src/
+
+tsconfig.json
+jest.config.js
+README-draft.md
+
+!dist/
+
+# Local Test Files
+dist-test.js
+
+# Documentation (generated)
+docs/
