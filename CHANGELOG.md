@@ -54,6 +54,19 @@ and this project adheres to
 
 - N/A (initial release)
 
+## [1.0.1] - 2025-07-XX
+
+### Added
+
+- Automatic npm publishing via GitHub Actions
+- CI status badge and direct links to npm/GitHub in `README.md`
+- Build verification script (`dist-test.js`) for post-compilation testing
+
+### Changed
+
+- Adjusted test timeouts to prevent intermittent failures in CI
+- Updated documentation and CI workflow with the correct Node.js version
+
 ---
 
 ## [Unreleased]
@@ -66,4 +79,5 @@ and this project adheres to
 - Extended documentation and examples
 
 [1.0.0]: https://github.com/j-givisiez/pg-parallel/releases/tag/v1.0.0
-[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.0...HEAD
+[1.0.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.0...v1.0.1
+[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.1...HEAD
