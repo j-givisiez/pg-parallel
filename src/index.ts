@@ -6,5 +6,5 @@
  * exports, it provides a clean and consistent public API for the package.
  */
 
-export { PgParallel } from "./pg-parallel";
-export type { IPgParallel, PgParallelConfig, IParallelClient } from "./types";
+export { PgParallel } from './pg-parallel';
+export type { IPgParallel, PgParallelConfig, IParallelClient } from './types';

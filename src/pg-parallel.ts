@@ -2,12 +2,12 @@
  * @file Implements the core logic for the pg-parallel manager.
  */
 
-import * as path from "path";
-import { cpus } from "os";
-import { Pool, QueryConfig, QueryResult, QueryResultRow } from "pg";
-import { Worker } from "worker_threads";
-import { v4 as uuidv4 } from "uuid";
-import { IParallelClient, IPgParallel, PgParallelConfig } from "./types";
+import * as path from 'path';
+import { cpus } from 'os';
+import { Pool, QueryConfig, QueryResult, QueryResultRow } from 'pg';
+import { Worker } from 'worker_threads';
+import { v4 as uuidv4 } from 'uuid';
+import { IParallelClient, IPgParallel, PgParallelConfig } from './types';
 
 class ParallelClient implements IParallelClient {
   constructor(
@@ -71,18 +71,18 @@ export class PgParallel implements IPgParallel {
       for (let i = 0; i < maxWorkers; i++) {
         const isTest = process.env.JEST_WORKER_ID !== undefined;
         // A robust way to check if we're running in a ts-node environment.
-        const isTsNode = !!(process as any)[Symbol.for("ts-node.register.instance")];
-        const workerPath = path.resolve(__dirname, isTest || isTsNode ? "pool-worker.ts" : "pool-worker.js");
+        const isTsNode = !!(process as any)[Symbol.for('ts-node.register.instance')];
+        const workerPath = path.resolve(__dirname, isTest || isTsNode ? 'pool-worker.ts' : 'pool-worker.js');
 
         const worker = new Worker(workerPath, {
           workerData: { poolConfig: workerConfig },
           // If in test or ts-node mode, we need to use ts-node to transpile the worker
-          execArgv: isTest || isTsNode ? ["-r", "ts-node/register"] : undefined,
+          execArgv: isTest || isTsNode ? ['-r', 'ts-node/register'] : undefined,
         });
 
-        worker.on("message", this.handleWorkerMessage.bind(this));
-        worker.on("error", (err) => console.error(`Worker error: ${err.message}`));
-        worker.on("exit", (code) => {
+        worker.on('message', this.handleWorkerMessage.bind(this));
+        worker.on('error', (err) => console.error(`Worker error: ${err.message}`));
+        worker.on('exit', (code) => {
           // Only log an error if the worker exited unexpectedly (not during a manual shutdown)
           if (code !== 0 && !this.isShutdown) {
             console.error(`Worker stopped with exit code ${code}`);
@@ -120,7 +120,7 @@ export class PgParallel implements IPgParallel {
       );
     }
     if (this.isShutdown) {
-      return Promise.reject(new Error("No workers available. Instance has been shut down."));
+      return Promise.reject(new Error('No workers available. Instance has been shut down.'));
     }
     this.ensureWorkersInitialized();
     const worker = this.getNextWorker();
@@ -132,7 +132,7 @@ export class PgParallel implements IPgParallel {
       this.pendingRequests.set(requestId, { resolve, reject });
     });
 
-    worker.postMessage({ type: "worker_task", clientId, requestId, payload: { task: task.toString() } });
+    worker.postMessage({ type: 'worker_task', clientId, requestId, payload: { task: task.toString() } });
     return promise;
   }
 
@@ -143,7 +143,7 @@ export class PgParallel implements IPgParallel {
       );
     }
     if (this.isShutdown) {
-      return Promise.reject(new Error("No workers available. Instance has been shut down."));
+      return Promise.reject(new Error('No workers available. Instance has been shut down.'));
     }
     this.ensureWorkersInitialized();
     const worker = this.getNextWorker();
@@ -152,7 +152,7 @@ export class PgParallel implements IPgParallel {
       this.pendingRequests.set(requestId, { resolve, reject });
     });
 
-    worker.postMessage({ type: "cpu_task", requestId, payload: { task: fn.toString(), args } });
+    worker.postMessage({ type: 'cpu_task', requestId, payload: { task: fn.toString(), args } });
     return promise;
   }
 
@@ -167,8 +167,8 @@ export class PgParallel implements IPgParallel {
       this.pendingRequests.set(requestId, { resolve, reject });
     });
 
-    const payload = typeof config === "object" ? { ...config } : { text: config, values };
-    worker.postMessage({ type: "query", clientId, requestId, payload });
+    const payload = typeof config === 'object' ? { ...config } : { text: config, values };
+    worker.postMessage({ type: 'query', clientId, requestId, payload });
     return promise;
   }
 

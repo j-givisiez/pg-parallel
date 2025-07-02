@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.0.0] - 2025-07-XX
 
@@ -41,7 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Node.js Support**: Requires Node.js v15.14.0 or higher
 - **PostgreSQL**: Compatible with `pg` v8.11.3+ (peer dependency)
-- **Performance**: Minimal overhead for I/O operations, significant gains for CPU-intensive tasks
+- **Performance**: Minimal overhead for I/O operations, significant gains for
+  CPU-intensive tasks
 - **Error Handling**: Descriptive error messages with proper propagation
 
 ### Breaking Changes

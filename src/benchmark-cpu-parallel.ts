@@ -1,13 +1,13 @@
-import "dotenv/config";
-import { cpus } from "os";
-import { PgParallel } from "./pg-parallel";
+import 'dotenv/config';
+import { cpus } from 'os';
+import { PgParallel } from './pg-parallel';
 
 const TOTAL_REQUESTS_CPU = 8;
 const TOTAL_MAX_CLIENTS = 100;
 const CPU_COMPLEXITY = 42;
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set.");
+  throw new Error('DATABASE_URL environment variable is not set.');
 }
 
 const pgParallelConfig = {

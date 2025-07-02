@@ -6,11 +6,13 @@
 [![License: MIT](https://img.shields.io/npm/l/pg-parallel.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/j-givisiez/pg-parallel/actions/workflows/ci.yml/badge.svg)](https://github.com/j-givisiez/pg-parallel/actions)
 
-**[View on npm](https://www.npmjs.com/package/pg-parallel) · [View on GitHub](https://github.com/j-givisiez/pg-parallel)**
+**[View on npm](https://www.npmjs.com/package/pg-parallel) ·
+[View on GitHub](https://github.com/j-givisiez/pg-parallel)**
 
 > Non-blocking PostgreSQL for Node.js with worker thread support
 
-A specialized wrapper around `node-postgres` that prevents event-loop blocking by offloading heavy CPU tasks and complex transactions to worker threads.
+A specialized wrapper around `node-postgres` that prevents event-loop blocking
+by offloading heavy CPU tasks and complex transactions to worker threads.
 
 ## Features
 
@@ -27,11 +29,15 @@ A specialized wrapper around `node-postgres` that prevents event-loop blocking b
 npm install pg-parallel pg
 ```
 
-**Note:** `pg` is a peer dependency and must be installed alongside `pg-parallel`.
+**Note:** `pg` is a peer dependency and must be installed alongside
+`pg-parallel`.
 
 ## Dependencies
 
-This library is built on top of [node-postgres (pg)](https://www.npmjs.com/package/pg), a non-blocking PostgreSQL client for Node.js. The `pg` package is included as a peer dependency and must be installed alongside `pg-parallel`.
+This library is built on top of
+[node-postgres (pg)](https://www.npmjs.com/package/pg), a non-blocking
+PostgreSQL client for Node.js. The `pg` package is included as a peer dependency
+and must be installed alongside `pg-parallel`.
 
 **Requirements:**
 
@@ -43,15 +49,15 @@ This library is built on top of [node-postgres (pg)](https://www.npmjs.com/packa
 ## Quick Start
 
 ```ts
-import { PgParallel } from "pg-parallel";
+import { PgParallel } from 'pg-parallel';
 
 const db = new PgParallel({
-  connectionString: "postgresql://user:pass@localhost/db",
+  connectionString: 'postgresql://user:pass@localhost/db',
   maxWorkers: 4, // Optional: defaults to CPU core count
 });
 
 // Standard I/O query (main thread)
-const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [1]);
+const { rows } = await db.query('SELECT * FROM users WHERE id = $1', [1]);
 
 // CPU-intensive task (worker thread)
 const result = await db.task(
@@ -64,7 +70,7 @@ const result = await db.task(
 
 // Mixed workload with database access (worker thread)
 const processed = await db.worker(async (client) => {
-  const { rows } = await client.query("SELECT data FROM table");
+  const { rows } = await client.query('SELECT data FROM table');
   return rows.map((row) => row.data.toUpperCase());
 });
 
@@ -81,7 +87,8 @@ new PgParallel(config: PgParallelConfig)
 
 The `config` object extends `pg.PoolConfig` with one additional property:
 
-- `maxWorkers?: number` - Number of worker threads (defaults to `os.cpus().length`)
+- `maxWorkers?: number` - Number of worker threads (defaults to
+  `os.cpus().length`)
 
 ### Methods
 
@@ -91,11 +98,11 @@ Execute standard I/O queries on the main thread pool.
 
 ```ts
 // Simple query
-const { rows } = await db.query("SELECT * FROM users WHERE id = $1", [1]);
+const { rows } = await db.query('SELECT * FROM users WHERE id = $1', [1]);
 
 // With query config
 const result = await db.query({
-  text: "SELECT * FROM users WHERE active = $1",
+  text: 'SELECT * FROM users WHERE active = $1',
   values: [true],
 });
 ```
@@ -115,7 +122,8 @@ const result = await db.task(fibonacci, [40]);
 
 #### `db.worker(task)`
 
-Execute database operations and CPU-intensive logic in worker threads with dedicated client connection.
+Execute database operations and CPU-intensive logic in worker threads with
+dedicated client connection.
 
 ```ts
 // Simple example
@@ -126,20 +134,25 @@ const result = await db.worker(async (client) => {
 
 // Transaction example
 await db.worker(async (client) => {
-  await client.query("BEGIN");
+  await client.query('BEGIN');
 
-  const { rows } = await client.query("UPDATE accounts SET balance = balance - 100 WHERE id = 1 RETURNING balance");
+  const { rows } = await client.query(
+    'UPDATE accounts SET balance = balance - 100 WHERE id = 1 RETURNING balance',
+  );
 
   if (rows[0].balance < 0) {
-    throw new Error("Insufficient funds");
+    throw new Error('Insufficient funds');
   }
 
-  await client.query("UPDATE accounts SET balance = balance + 100 WHERE id = 2");
-  await client.query("COMMIT");
+  await client.query(
+    'UPDATE accounts SET balance = balance + 100 WHERE id = 2',
+  );
+  await client.query('COMMIT');
 });
 ```
 
-**Note:** No manual `client.release()` needed - lifecycle is managed automatically.
+**Note:** No manual `client.release()` needed - lifecycle is managed
+automatically.
 
 #### `db.shutdown()`
 
@@ -157,32 +170,33 @@ For production code, organize worker logic in separate files:
 
 ```ts
 // tasks/report-worker.js
-const PDFDocument = require("pdfkit");
+const PDFDocument = require('pdfkit');
 
 module.exports = {
   generateReport: (data) => {
     const doc = new PDFDocument();
     doc.text(`Report for ${data.length} records`);
     doc.end();
-    return "Report generated";
+    return 'Report generated';
   },
 };
 
 // main.js
-const path = require("path");
+const path = require('path');
 
 await db.worker(async (client) => {
-  const taskPath = path.resolve(__dirname, "tasks/report-worker.js");
+  const taskPath = path.resolve(__dirname, 'tasks/report-worker.js');
   const { generateReport } = require(taskPath);
 
-  const { rows } = await client.query("SELECT * FROM sales_data");
+  const { rows } = await client.query('SELECT * FROM sales_data');
   return generateReport(rows);
 });
 ```
 
 ### Self-Contained Functions
 
-Functions passed to `db.task()` and `db.worker()` must be self-contained (no access to parent scope):
+Functions passed to `db.task()` and `db.worker()` must be self-contained (no
+access to parent scope):
 
 ```ts
 // ❌ Wrong - references parent scope
@@ -241,7 +255,8 @@ Sequential:            19.774s
 
 This project uses the following third-party libraries:
 
-- **[node-postgres (pg)](https://www.npmjs.com/package/pg)** - MIT License © Brian Carlson
+- **[node-postgres (pg)](https://www.npmjs.com/package/pg)** - MIT License ©
+  Brian Carlson
 - **[uuid](https://www.npmjs.com/package/uuid)** - MIT License
 
 ## License

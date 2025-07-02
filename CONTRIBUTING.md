@@ -2,7 +2,8 @@
 
 Thank you for considering contributing to `pg-parallel`! 🎉
 
-This document provides guidelines for contributing to the project. We want to make the process as simple and welcoming as possible.
+This document provides guidelines for contributing to the project. We want to
+make the process as simple and welcoming as possible.
 
 ## How Can I Contribute?
 
@@ -51,12 +52,17 @@ This document provides guidelines for contributing to the project. We want to ma
 - **TypeScript**: Use TypeScript for all new code with strict typing
 - **Formatting**: The project uses Prettier with 120 character line width
 - **Documentation**: Use JSDoc for all public interfaces, classes, and methods
-- **Comments**: No inline comments in `.js` and `.ts` files - only JSDoc documentation
-- **Logs**: Follow the standard without icons/emojis and without periods (e.g., "Worker thread started successfully")
+- **Comments**: No inline comments in `.js` and `.ts` files - only JSDoc
+  documentation
+- **Logs**: Follow the standard without icons/emojis and without periods (e.g.,
+  "Worker thread started successfully")
 - **Architecture**: Follow DDD and SOLID principles
-- **Imports**: Use explicit imports and organize them logically (Node.js built-ins first, then external packages, then local modules)
-- **Error Handling**: Use descriptive error messages and proper error propagation
-- **Naming**: Use descriptive names for variables, functions, and classes (e.g., `ParallelClient`, `PgParallelConfig`)
+- **Imports**: Use explicit imports and organize them logically (Node.js
+  built-ins first, then external packages, then local modules)
+- **Error Handling**: Use descriptive error messages and proper error
+  propagation
+- **Naming**: Use descriptive names for variables, functions, and classes (e.g.,
+  `ParallelClient`, `PgParallelConfig`)
 
 #### Testing
 
@@ -115,4 +121,5 @@ Thank you for contributing to make `pg-parallel` better for everyone! 🙏
 
 ---
 
-_This document is a work in progress. Suggestions to improve it are always welcome!_
+_This document is a work in progress. Suggestions to improve it are always
+welcome!_

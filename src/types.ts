@@ -1,4 +1,4 @@
-import { PoolClient, PoolConfig, QueryConfig, QueryResult, QueryResultRow } from "pg";
+import { PoolClient, PoolConfig, QueryConfig, QueryResult, QueryResultRow } from 'pg';
 
 /**
  * The client proxy returned by `pgParallel.worker()`.
