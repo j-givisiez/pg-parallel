@@ -10,5 +10,5 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true
   },
-  "exclude": ["node_modules", "dist", "__tests__", "jest.setup.ts", "src/benchmarks"]
+  "exclude": ["node_modules", "dist", "__tests__", "jest.setup.ts", "src/benchmarks", "examples"]
 }
