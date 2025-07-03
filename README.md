@@ -22,6 +22,8 @@ by offloading heavy CPU tasks and complex transactions to worker threads.
 - **Automatic Management**: No manual `client.release()` needed
 - **TypeScript Support**: Full type safety with comprehensive interfaces
 - **Lazy Initialization**: Workers spawned only when needed
+- **Worker Warmup**: Optional pre-initialization of workers for immediate
+  performance
 - **Graceful Shutdown**: Proper resource cleanup
 
 ## Installation
@@ -106,6 +108,17 @@ const result = await db.query({
   text: 'SELECT * FROM users WHERE active = $1',
   values: [true],
 });
+```
+
+#### `db.warmup()`
+
+Pre-initializes the worker thread pool to avoid a "cold start" latency on the
+first call to `.task()` or `.worker()`. This is useful in performance-sensitive
+applications where the initial startup time of workers should be minimized.
+
+```ts
+// It's a good practice to warmup the workers during application startup
+await db.warmup();
 ```
 
 #### `db.task(fn, args)`

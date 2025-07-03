@@ -19,6 +19,7 @@ const benchmarkMixedParallel = async () => {
   console.log(`\n--- Running Mixed I/O + CPU Benchmark (${TOTAL_REQUESTS_MIXED} tasks) ---`);
 
   const db = new PgParallel(pgParallelConfig);
+  await db.warmup();
   const startTime = Date.now();
   await Promise.all(
     Array.from({ length: TOTAL_REQUESTS_MIXED }, () =>

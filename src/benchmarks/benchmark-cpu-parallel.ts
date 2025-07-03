@@ -24,6 +24,7 @@ const fibonacciTask = function fib(n: number): number {
 const runParallel = async () => {
   console.log(`\n--- Running Pure CPU Benchmark (${TOTAL_REQUESTS_CPU} tasks) ---`);
   const db = new PgParallel(pgParallelConfig);
+  await db.warmup();
   const startTime = Date.now();
   await Promise.all(Array.from({ length: TOTAL_REQUESTS_CPU }, () => db.task(fibonacciTask, [CPU_COMPLEXITY])));
   console.log(`pg-parallel (.task): ${(Date.now() - startTime) / 1000}s`);

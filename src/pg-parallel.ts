@@ -41,6 +41,7 @@ export class PgParallel implements IPgParallel {
   >();
   private readonly config: PgParallelConfig;
   private isShutdown = false;
+  private initializationPromise: Promise<void> | null = null;
 
   constructor(config: PgParallelConfig) {
     if (!config.connectionString) {
@@ -57,40 +58,71 @@ export class PgParallel implements IPgParallel {
     this.localPool = new Pool({ ...config, max: localMax });
   }
 
-  private ensureWorkersInitialized() {
+  /**
+   * Pre-initializes the worker thread pool to avoid a "cold start" on the first
+   * call to `.task()` or `.worker()`. This method is idempotent and can be
+   * safely called multiple times. It's useful for warming up the workers
+   * before running performance-sensitive operations.
+   * @returns A promise that resolves when all workers are ready.
+   */
+  public warmup(): Promise<void> {
+    return this.ensureWorkersInitialized();
+  }
+
+  private ensureWorkersInitialized(): Promise<void> {
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
     if (this.isShutdown || this.workers.length > 0) {
-      return;
+      return Promise.resolve();
     }
 
-    const maxWorkers = this.config.maxWorkers ?? cpus().length;
-    if (maxWorkers > 0) {
-      const totalMax = this.config.max ?? 10;
-      const workerMax = Math.max(1, Math.floor(totalMax / (maxWorkers + 1)));
-      const workerConfig = { ...this.config, max: workerMax };
+    this.initializationPromise = (async () => {
+      const maxWorkers = this.config.maxWorkers ?? cpus().length;
+      if (maxWorkers > 0) {
+        const totalMax = this.config.max ?? 10;
+        const workerMax = Math.max(1, Math.floor(totalMax / (maxWorkers + 1)));
+        const workerConfig = { ...this.config, max: workerMax };
 
-      for (let i = 0; i < maxWorkers; i++) {
-        const isTest = process.env.JEST_WORKER_ID !== undefined;
-        // A robust way to check if we're running in a ts-node environment.
-        const isTsNode = !!(process as any)[Symbol.for('ts-node.register.instance')];
-        const workerPath = path.resolve(__dirname, isTest || isTsNode ? 'pool-worker.ts' : 'pool-worker.js');
+        const workerPromises = [];
 
-        const worker = new Worker(workerPath, {
-          workerData: { poolConfig: workerConfig },
-          // If in test or ts-node mode, we need to use ts-node to transpile the worker
-          execArgv: isTest || isTsNode ? ['-r', 'ts-node/register'] : undefined,
-        });
+        for (let i = 0; i < maxWorkers; i++) {
+          const isTest = process.env.JEST_WORKER_ID !== undefined;
+          // A robust way to check if we're running in a ts-node environment.
+          const isTsNode = !!(process as any)[Symbol.for('ts-node.register.instance')];
+          const workerPath = path.resolve(__dirname, isTest || isTsNode ? 'pool-worker.ts' : 'pool-worker.js');
 
-        worker.on('message', this.handleWorkerMessage.bind(this));
-        worker.on('error', (err) => console.error(`Worker error: ${err.message}`));
-        worker.on('exit', (code) => {
-          // Only log an error if the worker exited unexpectedly (not during a manual shutdown)
-          if (code !== 0 && !this.isShutdown) {
-            console.error(`Worker stopped with exit code ${code}`);
-          }
-        });
-        this.workers.push(worker);
+          const worker = new Worker(workerPath, {
+            workerData: { poolConfig: workerConfig },
+            // If in test or ts-node mode, we need to use ts-node to transpile the worker
+            execArgv: isTest || isTsNode ? ['-r', 'ts-node/register'] : undefined,
+          });
+
+          const readyPromise = new Promise<void>((resolve, reject) => {
+            worker.once('online', resolve);
+            worker.once('error', reject);
+            worker.once('exit', (code) => {
+              if (code !== 0 && !this.isShutdown) {
+                reject(new Error(`Worker stopped with exit code ${code}`));
+              }
+            });
+          });
+
+          worker.on('message', this.handleWorkerMessage.bind(this));
+          // These listeners are general and should stay for the life of the worker
+          worker.on('error', (err) => console.error(`Worker error: ${err.message}`));
+          worker.on('exit', (code) => {
+            if (code !== 0 && !this.isShutdown) {
+              console.error(`Worker stopped with exit code ${code}`);
+            }
+          });
+          this.workers.push(worker);
+          workerPromises.push(readyPromise);
+        }
+        await Promise.all(workerPromises);
       }
-    }
+    })();
+    return this.initializationPromise;
   }
 
   private handleWorkerMessage(message: { requestId: string; data?: any; error?: any }) {
@@ -113,7 +145,7 @@ export class PgParallel implements IPgParallel {
     return this.localPool.query(config, values);
   }
 
-  worker<T>(task: (client: IParallelClient) => Promise<T>): Promise<T> {
+  async worker<T>(task: (client: IParallelClient) => Promise<T>): Promise<T> {
     if (this.config.maxWorkers === 0) {
       return Promise.reject(
         new Error("No workers available. Configure 'maxWorkers' to be greater than 0 to use this feature."),
@@ -122,7 +154,7 @@ export class PgParallel implements IPgParallel {
     if (this.isShutdown) {
       return Promise.reject(new Error('No workers available. Instance has been shut down.'));
     }
-    this.ensureWorkersInitialized();
+    await this.ensureWorkersInitialized();
     const worker = this.getNextWorker();
     const clientId = uuidv4();
     const client = new ParallelClient(clientId, this, worker);
@@ -136,7 +168,7 @@ export class PgParallel implements IPgParallel {
     return promise;
   }
 
-  task<T, A extends any[]>(fn: (...args: A) => T | Promise<T>, args: A): Promise<T> {
+  async task<T, A extends any[]>(fn: (...args: A) => T | Promise<T>, args: A): Promise<T> {
     if (this.config.maxWorkers === 0) {
       return Promise.reject(
         new Error("No workers available. Configure 'maxWorkers' to be greater than 0 to use this feature."),
@@ -145,7 +177,7 @@ export class PgParallel implements IPgParallel {
     if (this.isShutdown) {
       return Promise.reject(new Error('No workers available. Instance has been shut down.'));
     }
-    this.ensureWorkersInitialized();
+    await this.ensureWorkersInitialized();
     const worker = this.getNextWorker();
     const requestId = uuidv4();
     const promise = new Promise<T>((resolve, reject) => {

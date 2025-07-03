@@ -147,7 +147,24 @@ describeif('PgParallel (Integration)', () => {
   });
 
   // Test for Configuration and Shutdown
-  describe('Configuration and Shutdown', () => {
+  describe('Configuration, Initialization, and Shutdown', () => {
+    it('should warmup workers ahead of time and be idempotent', async () => {
+      // Use a separate instance to avoid shutdown conflicts
+      const initDb = new PgParallel({
+        connectionString: process.env.DATABASE_URL,
+        maxWorkers: 2,
+      });
+
+      await initDb.warmup();
+      // Calling again should be fine
+      await initDb.warmup();
+
+      const result = await initDb.task((a, b) => a + b, [1, 2]);
+      expect(result).toBe(3);
+
+      await initDb.shutdown();
+    });
+
     it('should throw an error if worker methods are called with maxWorkers = 0', async () => {
       const noWorkerDb = new PgParallel({
         connectionString: process.env.DATABASE_URL,
