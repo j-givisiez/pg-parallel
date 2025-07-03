@@ -26,11 +26,11 @@ const runAll = () => {
   console.log(`Memory: ${totalMemoryGB} GB`);
   console.log('==========================================================');
 
-  runBenchmark('Pure I/O Benchmark', 'ts-node src/benchmark-io.ts');
-  runBenchmark('Pure CPU Benchmark (Parallel)', 'ts-node src/benchmark-cpu-parallel.ts');
-  runBenchmark('Pure CPU Benchmark (Sequential)', 'ts-node src/benchmark-cpu-sequential.ts');
-  runBenchmark('Mixed I/O + CPU Benchmark (Parallel)', 'ts-node src/benchmark-mixed-parallel.ts');
-  runBenchmark('Mixed I/O + CPU Benchmark (Sequential)', 'ts-node src/benchmark-mixed-sequential.ts');
+  runBenchmark('Pure I/O Benchmark', 'ts-node src/benchmarks/benchmark-io.ts');
+  runBenchmark('Pure CPU Benchmark (Parallel)', 'ts-node src/benchmarks/benchmark-cpu-parallel.ts');
+  runBenchmark('Pure CPU Benchmark (Sequential)', 'ts-node src/benchmarks/benchmark-cpu-sequential.ts');
+  runBenchmark('Mixed I/O + CPU Benchmark (Parallel)', 'ts-node src/benchmarks/benchmark-mixed-parallel.ts');
+  runBenchmark('Mixed I/O + CPU Benchmark (Sequential)', 'ts-node src/benchmarks/benchmark-mixed-sequential.ts');
 
   console.log('\nAll benchmarks completed successfully.');
 };

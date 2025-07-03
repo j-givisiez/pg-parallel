@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PgParallel } from './pg-parallel';
+import { PgParallel } from '../pg-parallel';
 import { Pool } from 'pg';
 
 const TOTAL_REQUESTS_IO = 10000;

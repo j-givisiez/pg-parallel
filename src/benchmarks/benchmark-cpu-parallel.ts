@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { cpus } from 'os';
-import { PgParallel } from './pg-parallel';
+import { PgParallel } from '../pg-parallel';
 
 const TOTAL_REQUESTS_CPU = 8;
 const TOTAL_MAX_CLIENTS = 100;
