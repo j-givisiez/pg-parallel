@@ -126,10 +126,11 @@ await db.warmup();
 Execute CPU-intensive functions in worker threads.
 
 ```ts
-const fibonacci = (n: number) => {
+// For recursive functions, use a named function declaration
+function fibonacci(n: number): number {
   if (n <= 1) return n;
   return fibonacci(n - 1) + fibonacci(n - 2);
-};
+}
 
 const result = await db.task(fibonacci, [40]);
 ```
@@ -209,8 +210,12 @@ await db.worker(async (client) => {
 
 ### Self-Contained Functions
 
-Functions passed to `db.task()` and `db.worker()` must be self-contained (no
-access to parent scope):
+Functions passed to `db.task()` and `db.worker()` must be self-contained and not
+rely on any variables from their parent scope. This is because the function is
+serialized, sent to a different thread, and deserialized, losing its original
+closure.
+
+**Example: Accessing External Variables**
 
 ```ts
 // ❌ Wrong - references parent scope
@@ -225,6 +230,29 @@ await db.task(
   },
   [100],
 );
+```
+
+**Example: Recursive Functions**
+
+For a function to call itself recursively inside a worker, it must be a **named
+function declaration**. An arrow function assigned to a `const` will not work
+because its name is part of the closure that gets lost.
+
+```ts
+// ❌ Wrong - recursive call will fail inside the worker
+const fibonacciArrow = (n: number): number => {
+  if (n <= 1) return n;
+  // This call will fail as 'fibonacciArrow' is not in the function's own scope
+  return fibonacciArrow(n - 1) + fibonacciArrow(n - 2);
+};
+await db.task(fibonacciArrow, [40]);
+
+// ✅ Correct - named function is self-contained
+function fibonacci(n: number): number {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+}
+await db.task(fibonacci, [40]);
 ```
 
 ## Performance
