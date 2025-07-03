@@ -6,6 +6,75 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Planned
+
+- Additional performance optimizations
+- Enhanced error handling and recovery
+- More comprehensive benchmarking tools
+- Extended documentation and examples
+
+## [1.1.1] - 2025-07-XX
+
+### Fixed
+
+- Corrected documentation in `README.md` to show the proper way to define
+  self-contained recursive functions using named function declarations.
+
+## [1.1.0] - 2025-07-XX
+
+### Added
+
+- `warmup()` method to pre-initialize the worker pool and avoid cold-start
+  latency.
+- Comprehensive `examples` directory with functional scripts for all major use
+  cases.
+- Detailed `README.md` and `setup.sql` for the examples to guide users.
+
+### Changed
+
+- Refactored benchmark scripts to a dedicated `src/benchmarks` directory.
+- Updated `README.md` with more detailed performance benchmarks and insights.
+- Improved internal worker implementation for clarity and security (replaced
+  `eval` with `new Function`).
+- Aligned CI pipeline to trigger npm publish on GitHub Releases only.
+
+### Fixed
+
+- Excluded the `examples` directory from the TypeScript build process.
+
+## [1.0.4] - 2025-07-XX
+
+### Changed
+
+- Updated the license badge in `README.md` to improve display reliability
+
+## [1.0.3] - 2025-07-XX
+
+### Fixed
+
+- Excluded benchmark files from the npm package by updating `tsconfig.json`
+
+## [1.0.2] - 2025-07-XX
+
+### Fixed
+
+- Added `repository` field to `package.json` to fix npm provenance error
+
+## [1.0.1] - 2025-07-XX
+
+### Added
+
+- Automatic npm publishing via GitHub Actions
+- CI status badge and direct links to npm/GitHub in `README.md`
+- Build verification script (`dist-test.js`) for post-compilation testing
+
+### Changed
+
+- Adjusted test timeouts to prevent intermittent failures in CI
+- Updated documentation and CI workflow with the correct Node.js version
+
 ## [1.0.0] - 2025-07-XX
 
 ### Added
@@ -40,7 +109,7 @@ and this project adheres to
 
 ### Technical Details
 
-- **Node.js Support**: Requires Node.js v15.14.0 or higher
+- **Node.js Support**: Requires Node.js v18.x or higher
 - **PostgreSQL**: Compatible with `pg` v8.11.3+ (peer dependency)
 - **Performance**: Minimal overhead for I/O operations, significant gains for
   CPU-intensive tasks
@@ -54,74 +123,11 @@ and this project adheres to
 
 - N/A (initial release)
 
-## [1.0.1] - 2025-07-XX
-
-### Added
-
-- Automatic npm publishing via GitHub Actions
-- CI status badge and direct links to npm/GitHub in `README.md`
-- Build verification script (`dist-test.js`) for post-compilation testing
-
-### Changed
-
-- Adjusted test timeouts to prevent intermittent failures in CI
-- Updated documentation and CI workflow with the correct Node.js version
-
-## [1.0.2] - 2025-07-XX
-
-### Fixed
-
-- Added `repository` field to `package.json` to fix npm provenance error
-
-## [1.0.3] - 2025-07-XX
-
-### Fixed
-
-- Excluded benchmark files from the npm package by updating `tsconfig.json`
-
-## [1.0.4] - 2025-07-XX
-
-### Changed
-
-- Updated the license badge in `README.md` to improve display reliability
-
-## [1.1.0] - 2025-07-XX
-
-### Added
-
-- `warmup()` method to pre-initialize the worker pool and avoid cold-start
-  latency.
-- Comprehensive `examples` directory with functional scripts for all major use
-  cases.
-- Detailed `README.md` and `setup.sql` for the examples to guide users.
-
-### Changed
-
-- Refactored benchmark scripts to a dedicated `src/benchmarks` directory.
-- Updated `README.md` with more detailed performance benchmarks and insights.
-- Improved internal worker implementation for clarity and security (replaced
-  `eval` with `new Function`).
-- Aligned CI pipeline to trigger npm publish on GitHub Releases only.
-
-### Fixed
-
-- Excluded the `examples` directory from the TypeScript build process.
-
----
-
-## [Unreleased]
-
-### Planned
-
-- Additional performance optimizations
-- Enhanced error handling and recovery
-- More comprehensive benchmarking tools
-- Extended documentation and examples
-
-[1.0.0]: https://github.com/j-givisiez/pg-parallel/releases/tag/v1.0.0
-[1.0.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.0...v1.0.1
-[1.0.2]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.1...v1.0.2
-[1.0.3]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.2...v1.0.3
-[1.0.4]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.3...v1.0.4
+[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.4...v1.1.0
-[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.0...HEAD
+[1.0.4]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.3...v1.0.4
+[1.0.3]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.2...v1.0.3
+[1.0.2]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/j-givisiez/pg-parallel/releases/tag/v1.0.0
