@@ -17,7 +17,8 @@ by offloading heavy CPU tasks and complex transactions to worker threads.
 ## Features
 
 - **Hybrid Architecture**: Fast I/O on main thread, heavy work on workers
-- **Zero Overhead**: Standard queries use main thread pool directly
+- **Low I/O Overhead**: Standard queries run on the main thread for high
+  performance
 - **Automatic Management**: No manual `client.release()` needed
 - **TypeScript Support**: Full type safety with comprehensive interfaces
 - **Lazy Initialization**: Workers spawned only when needed
@@ -215,28 +216,66 @@ await db.task(
 
 ## Performance
 
-Benchmark results on Apple M1 (8 cores):
+Benchmark results on Apple M1 (8 cores).
+
+### Test Run 1
 
 ```sh
 Pure I/O (10,000 requests):
-pg-parallel (.query): 0.853s
-pg.Pool (baseline):   0.483s
+pg-parallel (.query): 0.547s
+pg.Pool (baseline):   0.383s
 
 Pure CPU (8 tasks):
-pg-parallel (.task):  7.618s
-Sequential:           19.862s
+pg-parallel (.task):  7.317s
+Sequential:           19.532s
 
 Mixed I/O + CPU (8 tasks):
-pg-parallel (.worker): 7.657s
-Sequential:            19.774s
+pg-parallel (.worker): 6.914s
+Sequential:            19.741s
+```
+
+### Test Run 2
+
+```sh
+Pure I/O (10,000 requests):
+pg-parallel (.query): 0.512s
+pg.Pool (baseline):   0.422s
+
+Pure CPU (8 tasks):
+pg-parallel (.task):  6.785s
+Sequential:           19.563s
+
+Mixed I/O + CPU (8 tasks):
+pg-parallel (.worker): 7.253s
+Sequential:            19.857s
+```
+
+### Test Run 3
+
+```sh
+Pure I/O (10,000 requests):
+pg-parallel (.query): 0.515s
+pg.Pool (baseline):   0.411s
+
+Pure CPU (8 tasks):
+pg-parallel (.task):  6.906s
+Sequential:           19.487s
+
+Mixed I/O + CPU (8 tasks):
+pg-parallel (.worker): 6.949s
+Sequential:            19.731s
 ```
 
 **Key insights:**
 
-- Minimal overhead for I/O operations (~76% of baseline)
-- **2.6x faster** for CPU-intensive tasks
-- **2.6x faster** for mixed workloads
-- Event loop remains responsive during heavy computation
+- **I/O Overhead**: The overhead for direct I/O queries ranges from ~21% to ~43%
+  compared to the baseline `pg.Pool`.
+- **CPU-Intensive Tasks**: Parallel execution is consistently **2.7x to 2.9x
+  faster** than sequential processing.
+- **Mixed Workloads**: Workloads with both I/O and CPU operations see a similar
+  speedup of **2.7x to 2.9x**.
+- **Event Loop**: The main event loop remains unblocked and responsive during
+  heavy computations across all tests.
 
 ## When to Use
 
