@@ -85,6 +85,28 @@ and this project adheres to
 
 - Updated the license badge in `README.md` to improve display reliability
 
+## [1.1.0] - 2025-07-XX
+
+### Added
+
+- `warmup()` method to pre-initialize the worker pool and avoid cold-start
+  latency.
+- Comprehensive `examples` directory with functional scripts for all major use
+  cases.
+- Detailed `README.md` and `setup.sql` for the examples to guide users.
+
+### Changed
+
+- Refactored benchmark scripts to a dedicated `src/benchmarks` directory.
+- Updated `README.md` with more detailed performance benchmarks and insights.
+- Improved internal worker implementation for clarity and security (replaced
+  `eval` with `new Function`).
+- Aligned CI pipeline to trigger npm publish on GitHub Releases only.
+
+### Fixed
+
+- Excluded the `examples` directory from the TypeScript build process.
+
 ---
 
 ## [Unreleased]
@@ -101,4 +123,5 @@ and this project adheres to
 [1.0.2]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.1...v1.0.2
 [1.0.3]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.2...v1.0.3
 [1.0.4]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.3...v1.0.4
-[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.4...HEAD
+[1.1.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.4...v1.1.0
+[Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.0...HEAD
