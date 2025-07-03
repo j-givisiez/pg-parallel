@@ -9,6 +9,8 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  release:
+    types: [published]
 
 jobs:
   test:
@@ -80,7 +82,7 @@ jobs:
         continue-on-error: true
 
   publish:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'release'
     needs: test
     runs-on: ubuntu-latest
 
