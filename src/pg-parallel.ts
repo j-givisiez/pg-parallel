@@ -132,7 +132,7 @@ export class PgParallel implements IPgParallel {
       this.pendingRequests.set(requestId, { resolve, reject });
     });
 
-    worker.postMessage({ type: 'worker_task', clientId, requestId, payload: { task: task.toString() } });
+    worker.postMessage({ type: 'worker', clientId, requestId, payload: { task: task.toString() } });
     return promise;
   }
 
@@ -152,7 +152,7 @@ export class PgParallel implements IPgParallel {
       this.pendingRequests.set(requestId, { resolve, reject });
     });
 
-    worker.postMessage({ type: 'cpu_task', requestId, payload: { task: fn.toString(), args } });
+    worker.postMessage({ type: 'task', requestId, payload: { task: fn.toString(), args } });
     return promise;
   }
 

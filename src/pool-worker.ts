@@ -21,7 +21,7 @@ pool.on('error', (err) => {
 });
 
 interface WorkerMessage {
-  type: 'worker_task' | 'cpu_task' | 'query';
+  type: 'worker' | 'task' | 'query';
   clientId?: string;
   requestId: string;
   payload: any;
@@ -33,14 +33,14 @@ parentPort.on('message', async (message: WorkerMessage) => {
   try {
     let result: any;
     switch (type) {
-      case 'worker_task': {
-        if (!clientId) throw new Error('Missing clientId for worker_task.');
+      case 'worker': {
+        if (!clientId) throw new Error('Missing clientId for worker task.');
 
         const client = await pool.connect();
         activeClients.set(clientId, client);
 
         try {
-          const taskFunction = eval(`(${payload.task})`);
+          const taskFunction = new Function('client', `return (${payload.task})(client)`);
           result = await taskFunction(client);
         } finally {
           client.release();
@@ -49,8 +49,8 @@ parentPort.on('message', async (message: WorkerMessage) => {
         break;
       }
 
-      case 'cpu_task': {
-        const taskFunction = eval(`(${payload.task})`);
+      case 'task': {
+        const taskFunction = new Function('...args', `return (${payload.task})(...args)`);
         result = await taskFunction(...payload.args);
         break;
       }
