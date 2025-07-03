@@ -34,3 +34,6 @@ dist-test.js
 
 # Documentation (generated)
 /docs
+
+# macOS-specific files
+.DS_Store
