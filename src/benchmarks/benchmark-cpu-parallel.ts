@@ -16,11 +16,19 @@ const pgParallelConfig = {
   maxWorkers: cpus().length,
 };
 
+/**
+ * Calculates Fibonacci number recursively for CPU-intensive benchmarking
+ * @param n The Fibonacci number to calculate
+ * @returns The calculated Fibonacci value
+ */
 const fibonacciTask = function fib(n: number): number {
   if (n <= 1) return n;
   return fib(n - 1) + fib(n - 2);
 };
 
+/**
+ * Runs CPU-intensive benchmark using pg-parallel task method
+ */
 const runParallel = async () => {
   console.log(`\n--- Running Pure CPU Benchmark (${TOTAL_REQUESTS_CPU} tasks) ---`);
   const db = new PgParallel(pgParallelConfig);

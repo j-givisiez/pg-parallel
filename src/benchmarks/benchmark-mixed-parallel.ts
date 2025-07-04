@@ -15,6 +15,9 @@ const pgParallelConfig = {
   maxWorkers: cpus().length,
 };
 
+/**
+ * Runs mixed I/O and CPU benchmark using pg-parallel worker method
+ */
 const benchmarkMixedParallel = async () => {
   console.log(`\n--- Running Mixed I/O + CPU Benchmark (${TOTAL_REQUESTS_MIXED} tasks) ---`);
 

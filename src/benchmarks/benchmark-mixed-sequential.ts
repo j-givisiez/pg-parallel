@@ -14,11 +14,19 @@ const pgPoolConfig = {
   max: TOTAL_MAX_CLIENTS,
 };
 
+/**
+ * Calculates Fibonacci number recursively for CPU-intensive benchmarking
+ * @param n The Fibonacci number to calculate
+ * @returns The calculated Fibonacci value
+ */
 const fibonacciTask = function fib(n: number): number {
   if (n <= 1) return n;
   return fib(n - 1) + fib(n - 2);
 };
 
+/**
+ * Runs mixed I/O and CPU benchmark using standard pg.Pool for baseline comparison
+ */
 const benchmarkMixedSequential = async () => {
   const pool = new Pool(pgPoolConfig);
   const startTime = Date.now();

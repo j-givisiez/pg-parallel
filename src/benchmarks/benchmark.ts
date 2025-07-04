@@ -6,6 +6,11 @@
 import { execSync } from 'child_process';
 import { cpus, totalmem } from 'os';
 
+/**
+ * Runs a single benchmark command and handles errors
+ * @param name The name of the benchmark for logging
+ * @param command The command to execute
+ */
 const runBenchmark = (name: string, command: string) => {
   try {
     console.log(`\nRunning ${name}...`);
@@ -16,6 +21,9 @@ const runBenchmark = (name: string, command: string) => {
   }
 };
 
+/**
+ * Runs all benchmarks in sequence and displays system information
+ */
 const runAll = () => {
   const cpuModel = cpus()[0].model;
   const totalMemoryGB = (totalmem() / 1024 ** 3).toFixed(2);
@@ -32,7 +40,7 @@ const runAll = () => {
   runBenchmark('Mixed I/O + CPU Benchmark (Parallel)', 'ts-node src/benchmarks/benchmark-mixed-parallel.ts');
   runBenchmark('Mixed I/O + CPU Benchmark (Sequential)', 'ts-node src/benchmarks/benchmark-mixed-sequential.ts');
 
-  console.log('\nAll benchmarks completed successfully.');
+  console.log('\nAll benchmarks completed successfully');
 };
 
 runAll();

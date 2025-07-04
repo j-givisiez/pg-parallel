@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import { PgParallel } from '../pg-parallel';
 import { Pool } from 'pg';
+import { PgParallel } from '../pg-parallel';
 
 const TOTAL_REQUESTS_IO = 10000;
 const TOTAL_MAX_CLIENTS = 100;
@@ -19,6 +19,9 @@ const pgPoolConfig = {
   max: TOTAL_MAX_CLIENTS,
 };
 
+/**
+ * Runs I/O benchmark comparing pg-parallel query method with standard pg.Pool
+ */
 const benchmarkIo = async () => {
   console.log(`--- Running Pure I/O Benchmark (${TOTAL_REQUESTS_IO} requests) ---`);
 
