@@ -1,11 +1,9 @@
 /**
  * @file This script runs in a separate worker thread to handle database connections.
- * It manages a dedicated `pg.Pool` and handles client lifecycle events
- * (connect, query, release) as instructed by the main thread.
  */
 
 import { Pool, PoolClient, PoolConfig } from 'pg';
-import { parentPort, workerData } from 'worker_threads';
+import { parentPort, workerData, threadId } from 'worker_threads';
 
 if (!parentPort) {
   throw new Error('This script must be run as a worker thread.');
@@ -16,65 +14,74 @@ const pool = new Pool(poolConfig);
 const activeClients = new Map<string, PoolClient>();
 
 pool.on('error', (err) => {
-  // This will log errors from idle clients, which is useful for debugging.
   console.error('Idle client in worker pool encountered an error', err);
 });
 
 interface WorkerMessage {
   type: 'worker' | 'task' | 'query';
-  clientId?: string;
   requestId: string;
   payload: any;
+  clientId?: string;
 }
 
 parentPort.on('message', async (message: WorkerMessage) => {
-  const { type, clientId, requestId, payload } = message;
+  const { type, requestId, payload, clientId } = message;
+  const workerId = threadId.toString();
 
   try {
     let result: any;
-    switch (type) {
-      case 'worker': {
-        if (!clientId) throw new Error('Missing clientId for worker task.');
 
+    if (type === 'worker') {
+      if (payload.workerFile) {
         const client = await pool.connect();
-        activeClients.set(clientId, client);
-
+        try {
+          const taskModule = require(payload.workerFile.taskPath);
+          const taskName = payload.workerFile.taskName || 'handler';
+          if (typeof taskModule[taskName] !== 'function') {
+            throw new Error(`Task '${taskName}' not found or not a function in ${payload.workerFile.taskPath}`);
+          }
+          const taskArgs = payload.workerFile.args || [];
+          result = await taskModule[taskName](client, ...taskArgs);
+        } finally {
+          client.release();
+        }
+      } else if (payload.clientId) {
+        const client = await pool.connect();
+        activeClients.set(payload.clientId, client);
         try {
           const taskFunction = new Function('client', `return (${payload.task})(client)`);
           result = await taskFunction(client);
         } finally {
           client.release();
-          activeClients.delete(clientId);
+          activeClients.delete(payload.clientId);
         }
-        break;
+      } else {
+        const client = await pool.connect();
+        try {
+          const taskFunction = new Function('client', `return (${payload.task})(client)`);
+          result = await taskFunction(client);
+        } finally {
+          client.release();
+        }
       }
+    } else if (type === 'task') {
+      const taskFunction = new Function('...args', `return (${payload.task})(...args)`);
+      result = await taskFunction(...payload.args);
+    } else if (type === 'query') {
+      if (!clientId) throw new Error('Missing clientId for query.');
+      const client = activeClients.get(clientId);
+      if (!client) throw new Error(`Query failed: Client ${clientId} not found.`);
 
-      case 'task': {
-        const taskFunction = new Function('...args', `return (${payload.task})(...args)`);
-        result = await taskFunction(...payload.args);
-        break;
-      }
-
-      case 'query': {
-        if (!clientId) throw new Error('Missing clientId for query.');
-        const client = activeClients.get(clientId);
-        if (!client) throw new Error(`Query failed: Client ${clientId} not found.`);
-
-        const { text, values, ...config } = payload;
-        result = text ? await client.query(text, values) : await client.query(config);
-        break;
-      }
+      const { text, values, ...config } = payload;
+      result = text ? await client.query(text, values) : await client.query(config);
     }
 
-    // For queries, we must serialize the result to avoid cloning issues.
-    if (type === 'query' && result) {
-      parentPort?.postMessage({ requestId, data: { ...result, fields: result.fields.map((f: any) => ({ ...f })) } });
-    } else {
-      parentPort?.postMessage({ requestId, data: result });
-    }
+    const sanitizedResult = result && typeof result === 'object' ? JSON.parse(JSON.stringify(result)) : result;
+
+    parentPort?.postMessage({ requestId, workerId, data: sanitizedResult });
   } catch (err: any) {
-    parentPort?.postMessage({ requestId, error: { message: err.message } });
-    if (clientId) {
+    parentPort?.postMessage({ requestId, workerId, error: { message: err.message } });
+    if (clientId && activeClients.has(clientId)) {
       const client = activeClients.get(clientId);
       if (client) {
         client.release();
@@ -84,4 +91,4 @@ parentPort.on('message', async (message: WorkerMessage) => {
   }
 });
 
-console.log('Worker thread started successfully.');
+console.log('Worker thread started successfully');

@@ -7,4 +7,4 @@
  */
 
 export { PgParallel } from './pg-parallel';
-export type { IPgParallel, PgParallelConfig, IParallelClient } from './types';
+export type { IPgParallel, PgParallelConfig, IParallelClient, WorkerFileTask } from './types';

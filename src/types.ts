@@ -1,4 +1,4 @@
-import { PoolClient, PoolConfig, QueryConfig, QueryResult, QueryResultRow } from 'pg';
+import { PoolConfig, QueryConfig, QueryResult, QueryResultRow } from 'pg';
 
 /**
  * The client proxy returned by `pgParallel.worker()`.
@@ -41,6 +41,7 @@ export interface IPgParallel {
    * The client is automatically managed.
    */
   worker<T>(task: (client: IParallelClient) => Promise<T>): Promise<T>;
+  worker<T>(task: WorkerFileTask): Promise<T>;
 
   /**
    * Executes a pure CPU-bound task in an available worker thread without
@@ -65,9 +66,20 @@ export interface PgParallelConfig extends PoolConfig {
   maxWorkers?: number;
 }
 
-export interface PgPoolInstance {
-  pool: any;
-  createdAt: string;
-  destroyedAt?: string;
-  index: number;
+/**
+ * Represents a task to be executed from a file in a worker thread.
+ */
+export interface WorkerFileTask {
+  /**
+   * The absolute path to the module file.
+   */
+  taskPath: string;
+  /**
+   * The name of the exported function to execute. Defaults to 'handler'.
+   */
+  taskName?: string;
+  /**
+   * An array of arguments to pass to the file-based task function.
+   */
+  args?: any[];
 }
