@@ -8,14 +8,11 @@ import { IParallelClient, PgParallel } from '../src';
  * @returns An object containing the number of processed events.
  */
 async function etlProcess(client: IParallelClient) {
-  // This entire function runs inside a worker thread
-
   console.log('[Worker] Starting ETL process');
   await client.query('BEGIN');
   console.log('[Worker] Transaction started');
 
   try {
-    // 1. EXTRACT
     const { rows: events } = await client.query('SELECT * FROM raw_events WHERE processed = FALSE FOR UPDATE');
 
     if (events.length === 0) {
@@ -27,20 +24,17 @@ async function etlProcess(client: IParallelClient) {
     console.log(`[Worker] Extracted ${events.length} new events`);
 
     for (const event of events) {
-      // 2. TRANSFORM
       const transformedPayload = {
         ...event.payload,
         processedAt: new Date().toISOString(),
         source: 'etl-worker',
       };
 
-      // 3. LOAD
       await client.query('INSERT INTO processed_reports (report_data, source_event_id) VALUES ($1, $2)', [
         transformedPayload,
         event.id,
       ]);
 
-      // 4. UPDATE source
       await client.query('UPDATE raw_events SET processed = TRUE WHERE id = $1', [event.id]);
     }
 
