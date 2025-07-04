@@ -14,6 +14,7 @@ and this project adheres to
 
 - [Unreleased](#unreleased)
 - [Released Versions](#released-versions)
+  - [1.2.0 - 2025-07-04](#120---2025-07-04)
   - [1.1.1 - 2025-07-03](#111---2025-07-03)
   - [1.1.0 - 2025-07-03](#110---2025-07-03)
   - [1.0.4 - 2025-07-02](#104---2025-07-02)
@@ -63,6 +64,138 @@ and this project adheres to
 - **Security**: Enhanced security features and audit logging
 
 ## Released Versions
+
+### [1.2.0] - 2025-07-04
+
+> **Focus**: File-based worker execution and enhanced developer experience
+
+#### Added
+
+- 🚀 **NEW FEATURE: File-Based Worker Support (`WorkerFileTask`)**:
+  Revolutionary approach to worker organization
+
+  - **Interface**: New `WorkerFileTask` type for external worker module
+    execution
+  - **Method Overloading**: Enhanced `worker()` method accepts both functions
+    and file-based tasks
+  - **External Module Loading**: Workers can now `require()` external libraries
+    and modules
+  - **Named Functions**: Support for calling specific functions within worker
+    modules
+  - **Default Handlers**: Automatic fallback to default export when no function
+    specified
+  - **Real-World Integration**: Perfect for complex projects with reusable
+    worker logic
+  - **Usage Example**:
+
+    ```typescript
+    // Call specific function in worker module
+    const result = await db.worker({
+      taskPath: './workers/report-worker.js',
+      taskName: 'generateReport',
+      args: ['detailed'],
+    });
+
+    // Use default handler
+    const data = await db.worker({
+      taskPath: './workers/data-processor.js',
+      args: [inputData],
+    });
+    ```
+
+- 🎯 **File-Based Worker Examples**: Complete demonstration of the new
+  capability
+
+  - **Example 04**: Advanced usage with file-based workers and external modules
+  - **Example 05**: Simple file-based workers demonstration
+  - **Example 06**: Workers with external imports (UUID library integration)
+  - **Worker Module**: Reusable `report-worker.js` with UUID generation and
+    multiple functions
+  - **Production-Ready**: Real-world patterns for scalable worker organization
+
+- 🧪 **Enhanced Test Coverage**: Comprehensive test suite for file-based workers
+
+  - Added 7 new integration tests for `WorkerFileTask` functionality
+  - Complete coverage of file-based worker scenarios and error handling
+  - Real-world testing with external library imports
+  - Total test coverage increased to 21 comprehensive integration tests
+
+- 📚 **Professional Documentation Standards**: Complete documentation overhaul
+  - **README.md**: Enhanced with npm documentation standards, troubleshooting
+    section, performance guidelines
+  - **Examples README**: Comprehensive 600+ line guide with setup,
+    troubleshooting, and best practices
+  - **CONTRIBUTING.md**: Professional 553-line guide with detailed contribution
+    workflows
+  - **CHANGELOG.md**: Restructured following Keep a Changelog standards with
+    detailed version history
+
+#### Enhanced
+
+- 🏗️ **Code Quality Improvements**: Complete adherence to CONTRIBUTING.md
+  standards
+
+  - Removed all inline comments following established guidelines
+  - Added comprehensive JSDoc documentation to all benchmark functions
+  - Improved import organization (Node.js built-ins first, then external
+    packages)
+  - Enhanced code readability and maintainability
+
+- 📊 **Benchmark Documentation**: Enhanced benchmark suite with proper
+  documentation
+  - Added JSDoc comments to all benchmark functions
+  - Improved function parameter documentation
+  - Better organization of benchmark modules
+  - Enhanced performance analysis capabilities
+
+#### Fixed
+
+- 🎨 **Code Formatting**: Comprehensive style improvements
+  - Standardized log formatting (removed emojis and unnecessary punctuation)
+  - Improved TypeScript import consistency across all examples
+  - Enhanced code consistency following established patterns
+
+#### Performance Improvements
+
+- **Worker Organization**: File-based workers enable better code splitting and
+  reusability
+- **Module Loading**: Efficient `require()` support in worker threads without
+  serialization overhead
+- **Memory Usage**: Reduced memory footprint by sharing external modules across
+  worker instances
+- **Development Speed**: Faster development cycles with reusable worker modules
+- **Test Efficiency**: Streamlined test execution with better organization
+
+#### Breaking Changes
+
+- None (backward compatible)
+
+#### Migration Guide
+
+- **Existing Users**: No code changes required, all existing functionality
+  preserved
+- **New File-Based Workers**: Start using the new `WorkerFileTask` interface:
+
+  ```typescript
+  // Before: Inline function workers
+  await db.worker(async (client) => {
+    // Complex logic here...
+  });
+
+  // After: Organized file-based workers
+  await db.worker({
+    taskPath: './workers/my-worker.js',
+    taskName: 'processData',
+    args: [data],
+  });
+  ```
+
+- **Code Organization**: Move complex worker logic to separate files for better
+  maintainability
+- **External Libraries**: Now you can use `require()` within worker modules for
+  external dependencies
+
+---
 
 ### [1.1.1] - 2025-07-03
 
@@ -384,7 +517,8 @@ and this project adheres to
 
 ## Version Links
 
-- [Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.1...HEAD
+- [Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.2.0...HEAD
+- [1.2.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.1...v1.2.0
 - [1.1.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.0...v1.1.1
 - [1.1.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.4...v1.1.0
 - [1.0.4]: https://github.com/j-givisiez/pg-parallel/compare/v1.0.3...v1.0.4
