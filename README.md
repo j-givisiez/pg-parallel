@@ -344,73 +344,53 @@ PostgreSQL 15.
 
 ### Benchmark Overview
 
-| Scenario                         | pg-parallel | Baseline   | Improvement     |
-| -------------------------------- | ----------- | ---------- | --------------- |
-| **Pure I/O** (10,000 queries)    | 0.525s avg  | 0.405s avg | **-30% slower** |
-| **Pure CPU** (8 fibonacci tasks) | 6.97s avg   | 19.53s avg | **2.8x faster** |
-| **Mixed I/O + CPU** (8 tasks)    | 7.04s avg   | 19.78s avg | **2.8x faster** |
+| Scenario                         | pg-parallel | Baseline    | Improvement       |
+| -------------------------------- | ----------- | ----------- | ----------------- |
+| **Pure I/O** (10,000 queries)    | 0.449s avg  | 0.399s avg  | **-12.5% slower** |
+| **Pure CPU** (8 fibonacci tasks) | 6.713s avg  | 19.741s avg | **2.94x faster**  |
+| **Mixed I/O + CPU** (8 tasks)    | 7.312s avg  | 22.424s avg | **3.07x faster**  |
 
 ### Detailed Results
 
-#### Test Run 1
+You can run comprehensive benchmarks yourself to validate these results. Each
+benchmark runs 10 iterations for statistical accuracy:
 
-```sh
-Pure I/O (10,000 requests):
-pg-parallel (.query): 0.547s
-pg.Pool (baseline):   0.383s
+```bash
+# Pure I/O Benchmark (10,000 queries per run)
+ts-node src/benchmarks/benchmark-io-10-runs.ts
 
-Pure CPU (8 tasks):
-pg-parallel (.task):  7.317s
-Sequential:           19.532s
+# Pure CPU Benchmark (8 Fibonacci tasks per run)
+ts-node src/benchmarks/benchmark-cpu-10-runs.ts
 
-Mixed I/O + CPU (8 tasks):
-pg-parallel (.worker): 6.914s
-Sequential:            19.741s
+# Mixed I/O + CPU Benchmark (8 mixed tasks per run)
+ts-node src/benchmarks/benchmark-mixed-10-runs.ts
 ```
 
-#### Test Run 2
+**Benchmark Output Includes:**
 
-```sh
-Pure I/O (10,000 requests):
-pg-parallel (.query): 0.512s
-pg.Pool (baseline):   0.422s
+- Individual run times for each iteration
+- Statistical analysis (average, min, max, standard deviation)
+- Performance comparison vs baseline
+- Speedup calculations
 
-Pure CPU (8 tasks):
-pg-parallel (.task):  6.785s
-Sequential:           19.563s
+**Requirements:**
 
-Mixed I/O + CPU (8 tasks):
-pg-parallel (.worker): 7.253s
-Sequential:            19.857s
-```
-
-#### Test Run 3
-
-```sh
-Pure I/O (10,000 requests):
-pg-parallel (.query): 0.515s
-pg.Pool (baseline):   0.411s
-
-Pure CPU (8 tasks):
-pg-parallel (.task):  6.906s
-Sequential:           19.487s
-
-Mixed I/O + CPU (8 tasks):
-pg-parallel (.worker): 6.949s
-Sequential:            19.731s
-```
+- PostgreSQL instance running locally
+- `DATABASE_URL` environment variable configured
+- Node.js 18.x+ with TypeScript support
 
 ### Performance Analysis
 
 #### I/O Operations
 
-- **Overhead**: 21-43% slower than `pg.Pool` for pure I/O operations
+- **Overhead**: Approximately 12.5% slower than `pg.Pool` for pure I/O
+  operations
 - **Cause**: Additional abstraction layer and worker management overhead
 - **Recommendation**: Use `pg.Pool` directly for simple database queries
 
 #### CPU-Intensive Tasks
 
-- **Speedup**: Consistently 2.7x to 2.9x faster than sequential processing
+- **Speedup**: Consistently 2.9x to 3.1x faster than sequential processing
 - **Benefit**: Main thread remains responsive during heavy computations
 - **Scalability**: Performance scales with CPU core count
 
@@ -444,7 +424,7 @@ All benchmarks use:
 - Node.js 18.17.0
 - Apple M1 processor (8 cores)
 - Fibonacci(40) as CPU-intensive task
-- Average of 3 runs for consistency
+- Average of 30 runs (10 runs x 3 executions) for high precision
 
 ## When to Use
 
