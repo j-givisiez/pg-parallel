@@ -14,6 +14,7 @@ and this project adheres to
 
 - [Unreleased](#unreleased)
 - [Released Versions](#released-versions)
+  - [1.2.1 - 2025-07-04](#121---2025-07-04)
   - [1.2.0 - 2025-07-04](#120---2025-07-04)
   - [1.1.1 - 2025-07-03](#111---2025-07-03)
   - [1.1.0 - 2025-07-03](#110---2025-07-03)
@@ -27,19 +28,9 @@ and this project adheres to
 
 ## Unreleased
 
-### Added
+### Planned
 
-- 🛡️ **Enhanced Error Handling**
-
-  - Automatic retry mechanisms for transient failures (`retry` configuration)
-  - Circuit breaker pattern for database operations (`circuitBreaker`
-    configuration)
-  - Comprehensive error categorization via `PgParallelError` and `ErrorCategory`
-  - Pluggable `logger` interface for observability (retries, breaker
-    transitions, worker failures)
-  - Worker-side resilience: `connect()` and `query()` wrapped with retry +
-    breaker
-  - Documentation and new tests for resilience and logging
+- N/A
 
 ### Planned Features
 
@@ -72,7 +63,7 @@ and this project adheres to
 
 ## Released Versions
 
-### [1.2.1] - 2025-01-28
+### [1.2.1] - 2025-07-04
 
 > **Focus**: Enhanced benchmarking accuracy and comprehensive performance
 > validation
