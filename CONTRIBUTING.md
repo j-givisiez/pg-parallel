@@ -115,7 +115,6 @@ We welcome suggestions for new features and improvements!
 **Enhancement categories we're interested in:**
 - Performance improvements
 - New worker patterns
-- Better error handling
 - Enhanced TypeScript support
 - Documentation improvements
 - Developer experience enhancements
@@ -512,7 +511,6 @@ Look for issues labeled with:
 
 4. **Code**: New features and improvements
    - Performance optimizations
-   - Error handling improvements
    - New worker patterns
 
 ### Learning Resources

@@ -52,6 +52,10 @@ by offloading heavy CPU tasks and complex transactions to worker threads.
 - **Worker Warmup**: Optional pre-initialization of workers for immediate
   performance
 - **Graceful Shutdown**: Proper resource cleanup
+- **Resilience**: Built-in retry with exponential backoff and a circuit breaker
+- **Actionable Errors**: `PgParallelError` with standardized `ErrorCategory`
+- **Observability**: Pluggable `logger` with key events (retries, breaker
+  transitions, worker failures)
 
 ## Installation
 
@@ -113,10 +117,14 @@ await db.shutdown(); // Clean shutdown
 new PgParallel(config: PgParallelConfig)
 ```
 
-The `config` object extends `pg.PoolConfig` with one additional property:
+The `config` object extends `pg.PoolConfig` with additional properties:
 
 - `maxWorkers?: number` - Number of worker threads (defaults to
   `os.cpus().length`)
+- `retry?: RetryConfig` - Automatic retry for transient failures
+- `circuitBreaker?: CircuitBreakerConfig` - Circuit breaker for database
+  operations
+- `logger?: Logger` - Optional logger for observability
 
 ### Methods
 
@@ -226,6 +234,53 @@ await db.shutdown();
 ```
 
 ## Advanced Usage
+
+### Resilience and Logging
+
+`pg-parallel` includes optional resilience features and a pluggable logger.
+
+```ts
+import {
+  PgParallel,
+  type RetryConfig,
+  type CircuitBreakerConfig,
+} from 'pg-parallel';
+
+const retry: RetryConfig = {
+  maxAttempts: 4,
+  initialDelayMs: 100,
+  maxDelayMs: 1500,
+  backoffFactor: 2,
+  jitter: true,
+};
+
+const circuitBreaker: CircuitBreakerConfig = {
+  failureThreshold: 5,
+  cooldownMs: 10_000,
+  halfOpenMaxCalls: 2,
+  halfOpenSuccessesToClose: 2,
+};
+
+const db = new PgParallel({
+  connectionString: process.env.DATABASE_URL!,
+  retry,
+  circuitBreaker,
+  logger: {
+    info: (m, meta) => console.log(m, meta),
+    warn: (m, meta) => console.warn(m, meta),
+    error: (m, meta) => console.error(m, meta),
+  },
+});
+```
+
+Notes:
+
+- Retries target transient issues (timeouts, deadlocks, serialization failures,
+  connection resets).
+- Circuit breaker opens after consecutive failures, transitions to half-open
+  after cooldown, and closes on healthy trials.
+- Errors are thrown as `PgParallelError` with an `ErrorCategory` for easier
+  routing/metrics.
 
 ### Complex Worker Logic
 

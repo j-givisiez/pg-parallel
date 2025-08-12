@@ -27,6 +27,20 @@ and this project adheres to
 
 ## Unreleased
 
+### Added
+
+- 🛡️ **Enhanced Error Handling**
+
+  - Automatic retry mechanisms for transient failures (`retry` configuration)
+  - Circuit breaker pattern for database operations (`circuitBreaker`
+    configuration)
+  - Comprehensive error categorization via `PgParallelError` and `ErrorCategory`
+  - Pluggable `logger` interface for observability (retries, breaker
+    transitions, worker failures)
+  - Worker-side resilience: `connect()` and `query()` wrapped with retry +
+    breaker
+  - Documentation and new tests for resilience and logging
+
 ### Planned Features
 
 - 🚀 **Performance Optimizations**
@@ -35,13 +49,6 @@ and this project adheres to
   - Memory usage optimization for large datasets
   - Query result caching mechanisms
   - Worker thread pool auto-scaling
-
-- 🛡️ **Enhanced Error Handling**
-
-  - Automatic retry mechanisms for transient failures
-  - Circuit breaker pattern for database connections
-  - Comprehensive error categorization and recovery
-  - Enhanced logging and monitoring capabilities
 
 - 📊 **Benchmarking & Monitoring**
 

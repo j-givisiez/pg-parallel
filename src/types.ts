@@ -1,6 +1,78 @@
 import { PoolConfig, QueryConfig, QueryResult, QueryResultRow } from 'pg';
 
 /**
+ * Categorization for database and execution errors to enable
+ * consistent handling, retries, and monitoring.
+ */
+export type ErrorCategory =
+  | 'TRANSIENT'
+  | 'CONNECTION'
+  | 'TIMEOUT'
+  | 'DEADLOCK'
+  | 'SERIALIZATION'
+  | 'CONSTRAINT'
+  | 'SYNTAX'
+  | 'UNKNOWN';
+
+/**
+ * A standardized error type that wraps underlying errors with a category.
+ */
+export class PgParallelError extends Error {
+  public readonly category: ErrorCategory;
+  public readonly cause?: unknown;
+
+  constructor(message: string, category: ErrorCategory, cause?: unknown) {
+    super(message);
+    this.name = 'PgParallelError';
+    this.category = category;
+    this.cause = cause;
+  }
+}
+
+/**
+ * Logger interface used to emit diagnostic information without
+ * coupling to a specific logging library.
+ */
+export interface Logger {
+  debug?: (message: string, meta?: Record<string, unknown>) => void;
+  info?: (message: string, meta?: Record<string, unknown>) => void;
+  warn?: (message: string, meta?: Record<string, unknown>) => void;
+  error?: (message: string, meta?: Record<string, unknown>) => void;
+}
+
+/**
+ * Configuration for automatic retry behavior.
+ */
+export interface RetryConfig {
+  /** Maximum number of attempts, including the initial try. */
+  maxAttempts: number;
+  /** Initial backoff delay in milliseconds. */
+  initialDelayMs: number;
+  /** Maximum backoff delay in milliseconds. */
+  maxDelayMs: number;
+  /** Exponential backoff multiplier. */
+  backoffFactor: number;
+  /** Add jitter to mitigate thundering herd problems. */
+  jitter?: boolean;
+  /** Custom predicate to decide whether an error should be retried. */
+  retryOn?: (error: unknown) => boolean;
+}
+
+/**
+ * Configuration for a simple circuit breaker around database operations.
+ */
+export interface CircuitBreakerConfig {
+  /** Number of consecutive failures to open the breaker. */
+  failureThreshold: number;
+  /** Cooldown period in milliseconds while the breaker is open. */
+  cooldownMs: number;
+  /** Max number of trial calls in half-open state. */
+  halfOpenMaxCalls: number;
+  /** Number of successes in half-open to close the breaker. */
+  halfOpenSuccessesToClose: number;
+}
+
+/**
  * The client proxy returned by `pgParallel.worker()`.
  * It provides a safe way to interact with a database client in a worker thread.
  */
@@ -64,6 +136,12 @@ export interface PgParallelConfig extends PoolConfig {
    * @default os.cpus().length
    */
   maxWorkers?: number;
+  /** Optional logger for diagnostic events. */
+  logger?: Logger;
+  /** Optional retry configuration for transient failures. */
+  retry?: RetryConfig;
+  /** Optional circuit breaker configuration for database operations. */
+  circuitBreaker?: CircuitBreakerConfig;
 }
 
 /**
