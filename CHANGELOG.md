@@ -27,9 +27,19 @@ and this project adheres to
 
 ## Unreleased
 
-### Planned
+### Added
 
-- N/A
+- 🛡️ **Enhanced Error Handling**
+
+  - Automatic retry mechanisms for transient failures (`retry` configuration)
+  - Circuit breaker pattern for database operations (`circuitBreaker`
+    configuration)
+  - Comprehensive error categorization via `PgParallelError` and `ErrorCategory`
+  - Pluggable `logger` interface for observability (retries, breaker
+    transitions, worker failures)
+  - Worker-side resilience: `connect()` and `query()` wrapped with retry +
+    breaker
+  - Documentation and new tests for resilience and logging
 
 ### Planned Features
 
@@ -61,24 +71,6 @@ and this project adheres to
 - **Security**: Enhanced security features and audit logging
 
 ## Released Versions
-
-### [1.3.0] - 2025-08-12
-
-> **Focus**: Enhanced error handling, resilience, and observability
-
-#### Added
-
-- 🛡️ **Enhanced Error Handling and Resilience**
-
-  - Automatic retry mechanisms for transient failures (`retry` configuration)
-  - Circuit breaker pattern for database operations (`circuitBreaker`
-    configuration)
-  - Comprehensive error categorization via `PgParallelError` and `ErrorCategory`
-  - Pluggable `logger` interface for observability (retries, breaker
-    transitions, worker failures)
-  - Worker-side resilience: `connect()` and `query()` wrapped with retry +
-    breaker
-  - Documentation updates and new tests for resilience and logging
 
 ### [1.2.1] - 2025-01-28
 
@@ -603,8 +595,7 @@ and this project adheres to
 
 ## Version Links
 
-- [Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.3.0...HEAD
-- [1.3.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.2.1...v1.3.0
+- [Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.2.1...HEAD
 - [1.2.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.2.0...v1.2.1
 - [1.2.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.1...v1.2.0
 - [1.1.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.0...v1.1.1
