@@ -31,6 +31,7 @@ by offloading heavy CPU tasks and complex transactions to worker threads.
     - [`db.worker(task)`](#dbworkertask)
     - [`db.shutdown()`](#dbshutdown)
 - [Advanced Usage](#advanced-usage)
+  - [Resilience and Logging](#resilience-and-logging)
   - [Complex Worker Logic](#complex-worker-logic)
   - [Self-Contained Functions](#self-contained-functions)
 - [Performance](#performance)
@@ -518,7 +519,7 @@ await db.worker({
 });
 ```
 
-#### "All workers are busy" errors
+#### Workers appear busy or tasks aren't finishing
 
 **Problem:** Workers are not being released properly.
 
