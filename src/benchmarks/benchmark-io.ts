@@ -12,6 +12,7 @@ if (!process.env.DATABASE_URL) {
 const pgParallelConfig = {
   connectionString: process.env.DATABASE_URL,
   max: TOTAL_MAX_CLIENTS,
+  maxWorkers: 1,
 };
 
 const pgPoolConfig = {
