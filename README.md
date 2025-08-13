@@ -400,11 +400,11 @@ PostgreSQL 15.
 
 ### Benchmark Overview
 
-| Scenario                         | pg-parallel | Baseline    | Improvement       |
-| -------------------------------- | ----------- | ----------- | ----------------- |
-| **Pure I/O** (10,000 queries)    | 0.449s avg  | 0.399s avg  | **-12.5% slower** |
-| **Pure CPU** (8 fibonacci tasks) | 6.713s avg  | 19.741s avg | **2.94x faster**  |
-| **Mixed I/O + CPU** (8 tasks)    | 7.312s avg  | 22.424s avg | **3.07x faster**  |
+| Scenario                                     | pg-parallel | Baseline    | Improvement          |
+| -------------------------------------------- | ----------- | ----------- | -------------------- |
+| **Pure I/O** (10,000 queries, maxWorkers: 1) | 0.428s avg  | 0.418s avg  | **≈ parity (-2.5%)** |
+| **Pure CPU** (8 fibonacci tasks)             | 6.713s avg  | 19.741s avg | **2.94x faster**     |
+| **Mixed I/O + CPU** (8 tasks)                | 7.312s avg  | 22.424s avg | **3.07x faster**     |
 
 ### Detailed Results
 
@@ -439,10 +439,18 @@ ts-node src/benchmarks/benchmark-mixed-10-runs.ts
 
 #### I/O Operations
 
-- **Overhead**: Approximately 12.5% slower than `pg.Pool` for pure I/O
-  operations
-- **Cause**: Additional abstraction layer and worker management overhead
-- **Recommendation**: Use `pg.Pool` directly for simple database queries
+- **Pool allocation vs workers**: The maximum connection budget (`max`) is split
+  between the main pool and worker pools. By default, the number of workers is
+  `os.cpus().length`.
+- **Effect on pure I/O**: More workers means fewer connections left for the main
+  pool, which can limit throughput for `.query()`-only workloads.
+- **Recommendation**:
+  - For pure I/O benchmarks or simple CRUD services, set `maxWorkers: 1` (or `0`
+    if you won’t use workers) to keep most connections in the main pool.
+  - For mixed workloads (I/O + CPU/transactions), keep multiple workers to
+    benefit from parallelism.
+  - Our 10-run I/O benchmark with `maxWorkers: 1` achieved ≈ parity vs pg.Pool
+    (see table above).
 
 #### CPU-Intensive Tasks
 
