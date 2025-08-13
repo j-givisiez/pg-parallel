@@ -63,6 +63,28 @@ and this project adheres to
 
 ## Released Versions
 
+### [1.3.1] - 2025-08-12
+
+> Focus: Benchmark orchestration and performance documentation updates
+
+#### Added
+
+- Benchmarks: new 10-run benchmark orchestrator
+  `src/benchmarks/benchmark-10-runs.ts`
+- NPM script: `benchmark:10` to run all 10-run benchmarks in sequence
+
+#### Changed
+
+- Documentation: clarified worker impact on main pool connections for pure I/O
+- Performance table: updated Pure I/O results using `maxWorkers: 1` (≈ parity)
+- Benchmarks (I/O): set `maxWorkers: 1` to avoid connection budget fragmentation
+
+#### Breaking Changes
+
+- None
+
+---
+
 ### [1.3.0] - 2025-08-12
 
 > **Focus**: Enhanced error handling, resilience, and observability
@@ -606,7 +628,8 @@ and this project adheres to
 
 ## Version Links
 
-- [Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.3.0...HEAD
+- [Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.3.1...HEAD
+- [1.3.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.3.0...v1.3.1
 - [1.3.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.2.1...v1.3.0
 - [1.2.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.2.0...v1.2.1
 - [1.2.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.1.1...v1.2.0
