@@ -27,6 +27,7 @@
     "test": "npm run build && jest",
     "test:dist": "npm run build && node dist-test.js",
     "benchmark": "ts-node src/benchmarks/benchmark.ts",
+    "benchmark:10": "ts-node src/benchmarks/benchmark-10-runs.ts",
     "deploy": "npm run build && npm publish"
   },
   "keywords": [
