@@ -6,7 +6,7 @@ import * as path from 'path';
 import { cpus } from 'os';
 import { Pool, QueryConfig, QueryResult, QueryResultRow } from 'pg';
 import { Worker } from 'worker_threads';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import {
   IPgParallel,
   PgParallelConfig,
@@ -16,8 +16,10 @@ import {
   RetryConfig,
   CircuitBreakerConfig,
   PgParallelError,
-  ErrorCategory,
 } from './types';
+import { ErrorUtils } from './utils/ErrorUtils';
+import { RetryUtils } from './utils/RetryUtils';
+import { CircuitBreakerUtils, CircuitBreakerState } from './utils/CircuitBreakerUtils';
 
 class ParallelClient implements IParallelClient {
   constructor(
@@ -56,17 +58,14 @@ export class PgParallel implements IPgParallel {
   private readonly logger: Logger = {};
 
   // Circuit breaker state for main-thread pool operations
-  private breakerState: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
-  private consecutiveFailures = 0;
-  private halfOpenAllowedCalls = 0;
-  private halfOpenSuccesses = 0;
-  private breakerOpenedAt = 0;
+  private breakerState: CircuitBreakerState;
 
   constructor(config: PgParallelConfig) {
     if (!config.connectionString) {
       throw new Error("A 'connectionString' is required in the configuration.");
     }
     this.config = config;
+    this.breakerState = CircuitBreakerUtils.createInitialState();
 
     const maxWorkers = this.config.maxWorkers ?? cpus().length;
     const totalMax = this.config.max ?? 10;
@@ -149,7 +148,7 @@ export class PgParallel implements IPgParallel {
     if (!request) return;
 
     if (message.error) {
-      const category = this.categorizeError(message.error);
+      const category = ErrorUtils.categorizeError(message.error);
       this.logger.warn?.('Worker operation failed', {
         workerId: message.workerId,
         category,
@@ -180,7 +179,7 @@ export class PgParallel implements IPgParallel {
       }
       const workerInfo = this.getNextWorker();
       workerInfo.isBusy = true;
-      const requestId = uuidv4();
+      const requestId = randomUUID();
       const promise = new Promise<T>((resolve, reject) => {
         this.pendingRequests.set(requestId, { resolve, reject });
       });
@@ -205,13 +204,13 @@ export class PgParallel implements IPgParallel {
       }
       const workerInfo = this.getNextWorker();
       workerInfo.isBusy = true;
-      const requestId = uuidv4();
+      const requestId = randomUUID();
       const promise = new Promise<T>((resolve, reject) => {
         this.pendingRequests.set(requestId, { resolve, reject });
       });
 
       if (typeof task === 'function') {
-        const clientId = uuidv4();
+        const clientId = randomUUID();
         const client = new ParallelClient(clientId, this, workerInfo.worker);
         const payload = { task: task.toString(), clientId };
         workerInfo.worker.postMessage({ type: 'worker', requestId, payload });
@@ -231,7 +230,7 @@ export class PgParallel implements IPgParallel {
     config: string | QueryConfig<I>,
     values: I | undefined,
   ): Promise<QueryResult<R>> {
-    const requestId = uuidv4();
+    const requestId = randomUUID();
     const promise = new Promise<QueryResult<R>>((resolve, reject) => {
       this.pendingRequests.set(requestId, { resolve, reject });
     });
@@ -268,8 +267,10 @@ export class PgParallel implements IPgParallel {
    * Executes an operation protected by a circuit breaker and optional retry.
    */
   private async executeWithBreakerAndRetry<T>(operation: () => Promise<T>, opName: string): Promise<T> {
-    await this.ensureBreakerState();
-    if (this.breakerState === 'OPEN') {
+    const config = this.getCircuitBreakerConfig();
+    await CircuitBreakerUtils.ensureBreakerState(this.breakerState, config, this.logger);
+
+    if (this.breakerState.state === 'OPEN') {
       const err = new PgParallelError('Circuit breaker is open', 'CONNECTION');
       this.logger.warn?.('Breaker OPEN - rejecting operation', { opName });
       throw err;
@@ -278,11 +279,11 @@ export class PgParallel implements IPgParallel {
     const execOnce = async () => {
       try {
         const result = await operation();
-        this.onBreakerSuccess();
+        CircuitBreakerUtils.onBreakerSuccess(this.breakerState, config, this.logger);
         return result;
       } catch (error) {
-        this.onBreakerFailure();
-        throw this.wrapError(error);
+        CircuitBreakerUtils.onBreakerFailure(this.breakerState, config, this.logger);
+        throw ErrorUtils.wrapError(error);
       }
     };
 
@@ -290,171 +291,10 @@ export class PgParallel implements IPgParallel {
     if (!retryConfig) {
       return execOnce();
     }
-    return this.executeWithRetry(execOnce, retryConfig, opName);
-  }
-
-  /**
-   * Simple exponential backoff with optional jitter.
-   */
-  private async executeWithRetry<T>(fn: () => Promise<T>, cfg: RetryConfig, opName: string): Promise<T> {
-    let attempt = 0;
-    let delay = Math.max(0, cfg.initialDelayMs);
-    const maxDelay = Math.max(delay, cfg.maxDelayMs);
-    const shouldRetry = cfg.retryOn ?? ((err) => this.isTransient(err));
-
-    while (true) {
-      attempt += 1;
-      try {
-        if (attempt > 1) {
-          this.logger.info?.('Retrying operation', { opName, attempt });
-        }
-        const result = await fn();
-        return result;
-      } catch (error) {
-        const canRetry = attempt < cfg.maxAttempts && shouldRetry(error);
-        if (!canRetry) throw error;
-        const jitter = cfg.jitter ? Math.random() * 0.25 * delay : 0;
-        const wait = Math.min(maxDelay, delay + jitter);
-        await new Promise((r) => setTimeout(r, wait));
-        delay = Math.min(maxDelay, Math.ceil(delay * cfg.backoffFactor));
-      }
-    }
-  }
-
-  /**
-   * Updates breaker state on success.
-   */
-  private onBreakerSuccess(): void {
-    if (this.breakerState === 'HALF_OPEN') {
-      this.halfOpenSuccesses += 1;
-      const cfg = this.getCircuitBreakerConfig();
-      if (this.halfOpenSuccesses >= cfg.halfOpenSuccessesToClose) {
-        this.breakerState = 'CLOSED';
-        this.consecutiveFailures = 0;
-        this.logger.info?.('Breaker CLOSED after successful half-open trials');
-      }
-    } else {
-      this.consecutiveFailures = 0;
-    }
-  }
-
-  /**
-   * Updates breaker state on failure.
-   */
-  private onBreakerFailure(): void {
-    const cfg = this.getCircuitBreakerConfig();
-    this.consecutiveFailures += 1;
-    if (this.breakerState === 'HALF_OPEN') {
-      // Re-open
-      this.openBreaker();
-      return;
-    }
-    if (this.consecutiveFailures >= cfg.failureThreshold && this.breakerState === 'CLOSED') {
-      this.openBreaker();
-    }
-  }
-
-  private openBreaker(): void {
-    const cfg = this.getCircuitBreakerConfig();
-    this.breakerState = 'OPEN';
-    this.breakerOpenedAt = Date.now();
-    this.halfOpenAllowedCalls = cfg.halfOpenMaxCalls;
-    this.halfOpenSuccesses = 0;
-    this.logger.warn?.('Breaker OPENED');
-  }
-
-  private async ensureBreakerState(): Promise<void> {
-    if (this.breakerState === 'OPEN') {
-      const cfg = this.getCircuitBreakerConfig();
-      const elapsed = Date.now() - this.breakerOpenedAt;
-      if (elapsed >= cfg.cooldownMs) {
-        this.breakerState = 'HALF_OPEN';
-        this.halfOpenSuccesses = 0;
-        this.logger.info?.('Breaker HALF_OPEN');
-      }
-    }
-    if (this.breakerState === 'HALF_OPEN') {
-      if (this.halfOpenAllowedCalls <= 0) {
-        throw new PgParallelError('Circuit breaker trial limit reached', 'CONNECTION');
-      }
-      this.halfOpenAllowedCalls -= 1;
-    }
+    return RetryUtils.executeWithRetry(execOnce, retryConfig, opName, this.logger);
   }
 
   private getCircuitBreakerConfig(): CircuitBreakerConfig {
-    return (
-      this.config.circuitBreaker ?? {
-        failureThreshold: 5,
-        cooldownMs: 10_000,
-        halfOpenMaxCalls: 2,
-        halfOpenSuccessesToClose: 2,
-      }
-    );
-  }
-
-  /**
-   * Returns true if the error is likely transient and worth retrying.
-   */
-  private isTransient(error: unknown): boolean {
-    const category = this.categorizeError(error);
-    return (
-      category === 'TRANSIENT' ||
-      category === 'CONNECTION' ||
-      category === 'TIMEOUT' ||
-      category === 'DEADLOCK' ||
-      category === 'SERIALIZATION'
-    );
-  }
-
-  /**
-   * Wraps any error into PgParallelError with a category.
-   */
-  private wrapError(error: unknown): PgParallelError {
-    if (error instanceof PgParallelError) return error;
-    // Unwrap AggregateError for clearer messaging
-    const aggregate: any = error as any;
-    let baseError: any = error;
-    if (
-      aggregate &&
-      aggregate.name === 'AggregateError' &&
-      Array.isArray(aggregate.errors) &&
-      aggregate.errors.length > 0
-    ) {
-      baseError = aggregate.errors[0];
-    }
-    const category = this.categorizeError(baseError);
-    let message = baseError?.message;
-    if (!message || typeof message !== 'string' || message.trim() === '') {
-      message = 'Unknown error';
-    }
-    return new PgParallelError(message, category, error);
-  }
-
-  /**
-   * Categorizes errors based on pg error codes and common Node.js error codes.
-   */
-  private categorizeError(error: unknown): ErrorCategory {
-    const err: any = error as any;
-    const code: string | undefined = err?.code;
-    const name: string | undefined = err?.name;
-    const message: string | undefined = err?.message;
-    // Unwrap AggregateError if present
-    if (name === 'AggregateError' && Array.isArray(err?.errors) && err.errors.length > 0) {
-      return this.categorizeError(err.errors[0]);
-    }
-
-    if (code === '40001') return 'SERIALIZATION'; // serialization_failure
-    if (code === '40P01') return 'DEADLOCK'; // deadlock_detected
-    if (code === 'ETIMEDOUT' || code === '57014') return 'TIMEOUT';
-    if (code === 'ECONNRESET' || code === 'ECONNREFUSED' || code === '57P01' || code === '57P02') return 'CONNECTION';
-    if (code && code.startsWith('23')) return 'CONSTRAINT'; // integrity constraint violation class
-    if (code && code.startsWith('42')) return 'SYNTAX'; // syntax error or access rule violation
-
-    if (name === 'SequelizeConnectionError') return 'CONNECTION';
-    if (message && /timeout/i.test(message)) return 'TIMEOUT';
-    if (message && /connection/i.test(message)) return 'CONNECTION';
-    if (message && /deadlock/i.test(message)) return 'DEADLOCK';
-
-    return 'UNKNOWN';
+    return this.config.circuitBreaker ?? CircuitBreakerUtils.getDefaultConfig();
   }
 }

@@ -3,14 +3,14 @@
  * This module follows exactly the documentation from the README.md Advanced Usage section.
  */
 
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 module.exports = {
   generateReport: async (client, reportType = 'summary') => {
     const { rows } = await client.query("SELECT * FROM (SELECT 1 as id, 'Sample Data' as name) as sales_data");
 
-    // Generate unique report ID using imported uuid
-    const reportId = uuidv4();
+    // Generate unique report ID using crypto.randomUUID
+    const reportId = randomUUID();
 
     // Simulate report generation
     const reportContent = `${reportType} Report for ${rows.length} records`;
@@ -27,7 +27,7 @@ module.exports = {
   // Default handler (called when no taskName is specified)
   handler: async (client, message = 'Default task') => {
     const { rows } = await client.query('SELECT NOW() as timestamp');
-    const taskId = uuidv4();
+    const taskId = randomUUID();
     return { id: taskId, message, timestamp: rows[0].timestamp };
   },
 };

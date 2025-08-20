@@ -4,24 +4,13 @@
 
 import { Pool, PoolClient, PoolConfig } from 'pg';
 import { parentPort, workerData, threadId } from 'worker_threads';
+import { RetryConfig, CircuitBreakerConfig } from './types';
+import { ErrorUtils } from './utils/ErrorUtils';
+import { RetryUtils } from './utils/RetryUtils';
+import { CircuitBreakerUtils, CircuitBreakerState } from './utils/CircuitBreakerUtils';
 
 if (!parentPort) {
   throw new Error('This script must be run as a worker thread.');
-}
-
-interface RetryConfig {
-  maxAttempts: number;
-  initialDelayMs: number;
-  maxDelayMs: number;
-  backoffFactor: number;
-  jitter?: boolean;
-}
-
-interface CircuitBreakerConfig {
-  failureThreshold: number;
-  cooldownMs: number;
-  halfOpenMaxCalls: number;
-  halfOpenSuccessesToClose: number;
 }
 
 const {
@@ -44,112 +33,61 @@ pool.on('error', (err) => {
   }
 });
 
-type BreakerState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
-let breakerState: BreakerState = 'CLOSED';
-let consecutiveFailures = 0;
-let breakerOpenedAt = 0;
-let halfOpenAllowedCalls = 0;
-let halfOpenSuccesses = 0;
+let breakerState: CircuitBreakerState = CircuitBreakerUtils.createInitialState();
 
 function getCircuitCfg(): CircuitBreakerConfig {
-  return (
-    circuitConfig ?? {
-      failureThreshold: 5,
-      cooldownMs: 10_000,
-      halfOpenMaxCalls: 2,
-      halfOpenSuccessesToClose: 2,
-    }
-  );
+  return circuitConfig ?? CircuitBreakerUtils.getDefaultConfig();
 }
 
 async function ensureBreakerState(): Promise<void> {
-  if (breakerState === 'OPEN') {
-    const cfg = getCircuitCfg();
-    const elapsed = Date.now() - breakerOpenedAt;
-    if (elapsed >= cfg.cooldownMs) {
-      breakerState = 'HALF_OPEN';
-      halfOpenSuccesses = 0;
-      if (enableWorkerLogs) console.info('Worker breaker HALF_OPEN');
-      halfOpenAllowedCalls = cfg.halfOpenMaxCalls;
-    }
-  }
-  if (breakerState === 'HALF_OPEN') {
-    if (halfOpenAllowedCalls <= 0) {
-      throw new Error('Worker circuit breaker trial limit reached');
-    }
-    halfOpenAllowedCalls -= 1;
-  }
+  const cfg = getCircuitCfg();
+  const logger = enableWorkerLogs
+    ? {
+        info: (message: string) => console.info(message),
+        warn: (message: string) => console.warn(message),
+      }
+    : undefined;
+
+  await CircuitBreakerUtils.ensureBreakerState(breakerState, cfg, logger);
 }
 
 function onBreakerSuccess(): void {
-  if (breakerState === 'HALF_OPEN') {
-    halfOpenSuccesses += 1;
-    const cfg = getCircuitCfg();
-    if (halfOpenSuccesses >= cfg.halfOpenSuccessesToClose) {
-      breakerState = 'CLOSED';
-      consecutiveFailures = 0;
-      if (enableWorkerLogs) console.info('Worker breaker CLOSED');
-    }
-  } else {
-    consecutiveFailures = 0;
-  }
-}
-
-function openBreaker(): void {
   const cfg = getCircuitCfg();
-  breakerState = 'OPEN';
-  breakerOpenedAt = Date.now();
-  halfOpenAllowedCalls = cfg.halfOpenMaxCalls;
-  halfOpenSuccesses = 0;
-  if (enableWorkerLogs) console.warn('Worker breaker OPENED');
+  const logger = enableWorkerLogs
+    ? {
+        info: (message: string) => console.info(message),
+      }
+    : undefined;
+
+  CircuitBreakerUtils.onBreakerSuccess(breakerState, cfg, logger);
 }
 
 function onBreakerFailure(): void {
   const cfg = getCircuitCfg();
-  consecutiveFailures += 1;
-  if (breakerState === 'HALF_OPEN') {
-    openBreaker();
-    return;
-  }
-  if (consecutiveFailures >= cfg.failureThreshold && breakerState === 'CLOSED') {
-    openBreaker();
-  }
-}
+  const logger = enableWorkerLogs
+    ? {
+        warn: (message: string) => console.warn(message),
+      }
+    : undefined;
 
-function isTransient(error: any): boolean {
-  const code: string | undefined = error?.code;
-  const message: string | undefined = error?.message;
-  if (code === '40001' || code === '40P01') return true; // serialization/deadlock
-  if (code === 'ETIMEDOUT' || code === '57014') return true; // timeout
-  if (code === 'ECONNRESET' || code === 'ECONNREFUSED' || code === '57P01' || code === '57P02') return true; // conn
-  if (message && /timeout|deadlock|connection/i.test(message)) return true;
-  return false;
+  CircuitBreakerUtils.onBreakerFailure(breakerState, cfg, logger);
 }
 
 async function executeWithRetry<T>(fn: () => Promise<T>, opName: string): Promise<T> {
   if (!retryConfig) return fn();
-  let attempt = 0;
-  let delay = Math.max(0, retryConfig.initialDelayMs);
-  const maxDelay = Math.max(delay, retryConfig.maxDelayMs);
-  while (true) {
-    attempt += 1;
-    try {
-      if (attempt > 1 && enableWorkerLogs) console.info('Retrying worker op', { opName, attempt });
-      return await fn();
-    } catch (err) {
-      const canRetry = attempt < retryConfig.maxAttempts && isTransient(err);
-      if (!canRetry) throw err;
-      const jitter = retryConfig.jitter ? Math.random() * 0.25 * delay : 0;
-      const wait = Math.min(maxDelay, delay + jitter);
-      await new Promise((r) => setTimeout(r, wait));
-      delay = Math.min(maxDelay, Math.ceil(delay * retryConfig.backoffFactor));
-    }
-  }
+
+  const logger = enableWorkerLogs
+    ? {
+        info: (message: string, meta?: Record<string, unknown>) => console.info(message, meta),
+      }
+    : undefined;
+
+  return RetryUtils.executeWithRetry(fn, retryConfig, opName, logger);
 }
 
 async function executeWithBreakerAndRetry<T>(fn: () => Promise<T>, opName: string): Promise<T> {
   await ensureBreakerState();
-  if (breakerState === 'OPEN') {
+  if (breakerState.state === 'OPEN') {
     throw new Error('Worker circuit breaker is open');
   }
   const execOnce = async () => {
