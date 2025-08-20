@@ -25,6 +25,7 @@ patterns.
   - [Example 4: Advanced File-based Workers](#example-4-advanced-file-based-workers)
   - [Example 5: Simple File-based Workers](#example-5-simple-file-based-workers)
   - [Example 6: Workers with External Imports](#example-6-workers-with-external-imports)
+  - [Example 7: Utility Classes](#example-7-utility-classes)
 - [Worker Files](#worker-files)
 - [Performance Notes](#performance-notes)
 - [Troubleshooting](#troubleshooting)
@@ -118,14 +119,15 @@ Seeded tables with sample data
 
 ## Examples Overview
 
-| Example | Focus Area          | Difficulty      | Runtime | Key Features                        |
-| ------- | ------------------- | --------------- | ------- | ----------------------------------- |
-| **01**  | Basic I/O           | 🟢 Beginner     | ~1s     | Simple queries, error handling      |
-| **02**  | CPU Tasks           | 🟡 Intermediate | ~10s    | Fibonacci calculation, non-blocking |
-| **03**  | Mixed Workload      | 🟡 Intermediate | ~3s     | ETL process, transactions           |
-| **04**  | File Workers        | 🔴 Advanced     | ~2s     | External modules, complex logic     |
-| **05**  | Simple File Workers | 🟡 Intermediate | ~1s     | File-based execution intro          |
-| **06**  | External Imports    | 🔴 Advanced     | ~2s     | UUID generation, parallel execution |
+| Example | Focus Area          | Difficulty      | Runtime | Key Features                           |
+| ------- | ------------------- | --------------- | ------- | -------------------------------------- |
+| **01**  | Basic I/O           | 🟢 Beginner     | ~1s     | Simple queries, error handling         |
+| **02**  | CPU Tasks           | 🟡 Intermediate | ~10s    | Fibonacci calculation, non-blocking    |
+| **03**  | Mixed Workload      | 🟡 Intermediate | ~3s     | ETL process, transactions              |
+| **04**  | File Workers        | 🔴 Advanced     | ~2s     | External modules, complex logic        |
+| **05**  | Simple File Workers | 🟡 Intermediate | ~1s     | File-based execution intro             |
+| **06**  | External Imports    | 🔴 Advanced     | ~2s     | ID generation, parallel execution      |
+| **07**  | Utility Classes     | 🔴 Advanced     | ~1s     | Error handling, retry, circuit breaker |
 
 ## Running Examples
 
@@ -344,7 +346,7 @@ node dist-examples/06-worker-with-imports.js
 **What it teaches:**
 
 - External library imports in workers
-- UUID generation in workers
+- ID generation in workers
 - Parallel worker execution
 - Complex data structures
 
@@ -353,15 +355,15 @@ node dist-examples/06-worker-with-imports.js
 ```
 Testing file-based worker with imports...
 
-1. Default handler with UUID:
+1. Default handler with randomUUID:
    Result: {
      id: 'd4e5f6g7-h8i9-0123-defg-456789012345',
-     message: 'Task with UUID generation',
+     message: 'Task with randomUUID generation',
      timestamp: 2024-01-15T10:30:47.012Z
    }
-   UUID generated: d4e5f6g7-h8i9-0123-defg-456789012345
+   ID generated: d4e5f6g7-h8i9-0123-defg-456789012345
 
-2. Named function with UUID:
+2. Named function with randomUUID:
    Result: {
      id: 'e5f6g7h8-i9j0-1234-efgh-567890123456',
      type: 'detailed',
@@ -379,10 +381,69 @@ Testing file-based worker with imports...
 All workers completed successfully!
 Key benefits demonstrated:
    - Workers can use require() to import external libraries
-   - Each worker execution gets unique IDs via UUID
+   - Each worker execution gets unique IDs via crypto.randomUUID
    - Multiple workers can run in parallel
    - Database queries work normally within workers
 ```
+
+### Example 7: Utility Classes
+
+**Purpose:** Demonstrates advanced usage of exported utility classes for custom
+error handling, retry logic, and circuit breaker patterns.
+
+**Command:**
+
+```bash
+ts-node examples/07-utilities-usage.ts
+```
+
+**Expected Output:**
+
+```
+Running Example 7: Utilities Usage
+
+=== Error Utilities Demo ===
+Timeout error category: TIMEOUT
+Connection error category: CONNECTION
+Unknown error category: UNKNOWN
+Is timeout transient? true
+Is connection transient? true
+
+=== Retry Utilities Demo ===
+  Attempt 1
+  Attempt 2
+  Attempt 3
+Retry result: Success after retries!
+
+=== Circuit Breaker Utilities Demo ===
+Initial breaker state: CLOSED
+Default config: {
+  failureThreshold: 5,
+  cooldownMs: 10000,
+  halfOpenMaxCalls: 2,
+  halfOpenSuccessesToClose: 2
+}
+After failure 1, state: CLOSED, consecutive failures: 1
+After failure 2, state: CLOSED, consecutive failures: 2
+After failure 3, state: CLOSED, consecutive failures: 3
+After failure 4, state: CLOSED, consecutive failures: 4
+After failure 5, state: OPEN, consecutive failures: 5
+After failure 6, state: OPEN, consecutive failures: 6
+After success, state: OPEN
+
+=== Integration with PgParallel ===
+PgParallel instance created with custom retry and circuit breaker configs
+
+Utilities demo completed!
+```
+
+**Key Features:**
+
+- **Error Classification**: Demonstrates error categorization and transient
+  detection
+- **Custom Retry Logic**: Shows independent usage of retry utilities
+- **Circuit Breaker Management**: Illustrates circuit breaker state management
+- **Advanced Configuration**: Integration with PgParallel using custom configs
 
 ## Worker Files
 
@@ -395,7 +456,7 @@ external imports.
 
 **Features:**
 
-- **UUID Generation**: Uses `uuid` library for unique identifiers
+- **ID Generation**: Uses `crypto.randomUUID` for unique identifiers
 - **Multiple Functions**: `generateReport()` and `handler()` functions
 - **Database Integration**: Executes queries within workers
 - **Error Handling**: Robust error management

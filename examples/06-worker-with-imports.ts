@@ -35,15 +35,15 @@ const main = async () => {
   try {
     console.log('Testing file-based worker with imports...\n');
 
-    console.log('1. Default handler with UUID:');
+    console.log('1. Default handler with randomUUID:');
     const defaultResult = await db.worker<HandlerResult>({
       taskPath: path.resolve(__dirname, 'tasks/report-worker.js'),
-      args: ['Task with UUID generation'],
+      args: ['Task with randomUUID generation'],
     });
     console.log('   Result:', defaultResult);
-    console.log('   UUID generated:', defaultResult.id);
+    console.log('   ID generated:', defaultResult.id);
 
-    console.log('\n2. Named function with UUID:');
+    console.log('\n2. Named function with randomUUID:');
     const reportResult = await db.worker<ReportResult>({
       taskPath: path.resolve(__dirname, 'tasks/report-worker.js'),
       taskName: 'generateReport',
@@ -82,7 +82,7 @@ const main = async () => {
     console.log('\nAll workers completed successfully');
     console.log('Key benefits demonstrated:');
     console.log('   - Workers can use require() to import external libraries');
-    console.log('   - Each worker execution gets unique IDs via UUID');
+    console.log('   - Each worker execution gets unique IDs via crypto.randomUUID');
     console.log('   - Multiple workers can run in parallel');
     console.log('   - Database queries work normally within workers');
   } catch (error) {

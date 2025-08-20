@@ -34,6 +34,7 @@ by offloading heavy CPU tasks and complex transactions to worker threads.
   - [Resilience and Logging](#resilience-and-logging)
   - [Complex Worker Logic](#complex-worker-logic)
   - [Self-Contained Functions](#self-contained-functions)
+  - [Utility Classes](#utility-classes)
 - [Performance](#performance)
 - [When to Use](#when-to-use)
 - [Troubleshooting](#troubleshooting)
@@ -57,6 +58,8 @@ by offloading heavy CPU tasks and complex transactions to worker threads.
 - **Actionable Errors**: `PgParallelError` with standardized `ErrorCategory`
 - **Observability**: Pluggable `logger` with key events (retries, breaker
   transitions, worker failures)
+- **Zero Dependencies**: Uses only Node.js built-in modules (crypto.randomUUID)
+- **Modular Utilities**: Exportable utility classes for advanced custom usage
 
 ## Installation
 
@@ -290,7 +293,7 @@ For production code, organize worker logic in separate files using the
 
 ```js
 // tasks/report-worker.js
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 module.exports = {
   generateReport: async (client, reportType = 'summary') => {
@@ -298,8 +301,8 @@ module.exports = {
       "SELECT * FROM (SELECT 1 as id, 'Sample Data' as name) as sales_data",
     );
 
-    // Generate unique report ID using imported uuid
-    const reportId = uuidv4();
+    // Generate unique report ID using crypto.randomUUID
+    const reportId = randomUUID();
 
     // Simulate report generation
     const reportContent = `${reportType} Report for ${rows.length} records`;
@@ -316,7 +319,7 @@ module.exports = {
   // Default handler (called when no taskName is specified)
   handler: async (client, message = 'Default task') => {
     const { rows } = await client.query('SELECT NOW() as timestamp');
-    const taskId = uuidv4();
+    const taskId = randomUUID();
     return { id: taskId, message, timestamp: rows[0].timestamp };
   },
 };
@@ -391,6 +394,55 @@ function fibonacci(n: number): number {
 }
 await db.task(fibonacci, [40]);
 ```
+
+### Utility Classes
+
+For advanced usage, `pg-parallel` exports utility classes that power the
+internal resilience features. These can be used independently for custom
+implementations:
+
+```ts
+import {
+  ErrorUtils,
+  RetryUtils,
+  CircuitBreakerUtils,
+  type CircuitBreakerState,
+  type RetryConfig,
+} from 'pg-parallel';
+
+// Error classification and handling
+const isRetryable = ErrorUtils.isTransient(error);
+const category = ErrorUtils.categorizeError(error);
+const wrappedError = ErrorUtils.wrapError(error);
+
+// Custom retry logic
+const retryConfig: RetryConfig = {
+  maxAttempts: 3,
+  initialDelayMs: 100,
+  maxDelayMs: 1000,
+  backoffFactor: 2,
+  jitter: true,
+};
+
+const result = await RetryUtils.executeWithRetry(
+  () => someAsyncOperation(),
+  retryConfig,
+  'my-operation',
+);
+
+// Circuit breaker management
+const breakerState = CircuitBreakerUtils.createInitialState();
+const breakerConfig = CircuitBreakerUtils.getDefaultConfig();
+
+CircuitBreakerUtils.onBreakerFailure(breakerState, breakerConfig);
+await CircuitBreakerUtils.ensureBreakerState(breakerState, breakerConfig);
+```
+
+**Available Utility Classes:**
+
+- **`ErrorUtils`**: Error categorization, transient detection, and wrapping
+- **`RetryUtils`**: Exponential backoff retry logic with jitter
+- **`CircuitBreakerUtils`**: Circuit breaker state management and transitions
 
 ## Performance
 
@@ -516,7 +568,7 @@ All benchmarks use:
 ```ts
 // Wrong - this will fail
 await db.worker(async (client) => {
-  const uuid = require('uuid'); // Error: require is not defined
+  const { randomUUID } = require('crypto'); // Error: require is not defined
   // ...
 });
 
@@ -611,7 +663,10 @@ This project uses the following third-party libraries:
 
 - **[node-postgres (pg)](https://www.npmjs.com/package/pg)** - MIT License ©
   Brian Carlson
-- **[uuid](https://www.npmjs.com/package/uuid)** - MIT License
+
+**Note:** Previous versions used the `uuid` library, but since v1.4.0,
+pg-parallel uses Node.js built-in `crypto.randomUUID()` for zero external
+dependencies.
 
 ## License
 

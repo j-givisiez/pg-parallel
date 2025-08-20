@@ -219,8 +219,8 @@ and this project adheres to
 
   - **Example 04**: Advanced usage with file-based workers and external modules
   - **Example 05**: Simple file-based workers demonstration
-  - **Example 06**: Workers with external imports (UUID library integration)
-  - **Worker Module**: Reusable `report-worker.js` with UUID generation and
+  - **Example 06**: Workers with external imports (ID generation integration)
+  - **Worker Module**: Reusable `report-worker.js` with ID generation and
     multiple functions
   - **Production-Ready**: Real-world patterns for scalable worker organization
 
