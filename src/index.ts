@@ -18,3 +18,8 @@ export type {
   ErrorCategory,
 } from './types';
 export { PgParallelError } from './types';
+
+export { ErrorUtils } from './utils/ErrorUtils';
+export { RetryUtils } from './utils/RetryUtils';
+export { CircuitBreakerUtils } from './utils/CircuitBreakerUtils';
+export type { CircuitBreakerState } from './utils/CircuitBreakerUtils';
