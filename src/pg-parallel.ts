@@ -60,12 +60,22 @@ export class PgParallel implements IPgParallel {
   // Circuit breaker state for main-thread pool operations
   private breakerState: CircuitBreakerState;
 
+  // Performance optimization: Cache frequently accessed configurations
+  private readonly circuitBreakerConfig: CircuitBreakerConfig;
+  private readonly hasRetryConfig: boolean;
+  private readonly hasLogger: boolean;
+
   constructor(config: PgParallelConfig) {
     if (!config.connectionString) {
       throw new Error("A 'connectionString' is required in the configuration.");
     }
     this.config = config;
     this.breakerState = CircuitBreakerUtils.createInitialState();
+
+    // Pre-compute and cache frequently used configurations
+    this.circuitBreakerConfig = config.circuitBreaker ?? CircuitBreakerUtils.getDefaultConfig();
+    this.hasRetryConfig = !!(config.retry && config.retry.maxAttempts > 1);
+    this.hasLogger = !!config.logger;
 
     const maxWorkers = this.config.maxWorkers ?? cpus().length;
     const totalMax = this.config.max ?? 10;
@@ -265,9 +275,19 @@ export class PgParallel implements IPgParallel {
 
   /**
    * Executes an operation protected by a circuit breaker and optional retry.
+   * Optimized for performance while maintaining all observability features.
    */
   private async executeWithBreakerAndRetry<T>(operation: () => Promise<T>, opName: string): Promise<T> {
-    const config = this.getCircuitBreakerConfig();
+    // Use cached config instead of method call
+    const config = this.circuitBreakerConfig;
+
+    // Fast path: Skip state check if breaker is closed and has no failures
+    if (this.breakerState.state === 'CLOSED' && this.breakerState.consecutiveFailures === 0) {
+      // Ultra-fast path for the most common case
+      return this.executeFastPath(operation, config, opName);
+    }
+
+    // Standard path with full state management
     await CircuitBreakerUtils.ensureBreakerState(this.breakerState, config, this.logger);
 
     if (this.breakerState.state === 'OPEN') {
@@ -287,14 +307,44 @@ export class PgParallel implements IPgParallel {
       }
     };
 
-    const retryConfig = this.config.retry;
-    if (!retryConfig) {
+    // Use cached boolean check instead of object access
+    if (!this.hasRetryConfig) {
       return execOnce();
     }
-    return RetryUtils.executeWithRetry(execOnce, retryConfig, opName, this.logger);
+    return RetryUtils.executeWithRetry(execOnce, this.config.retry!, opName, this.logger);
   }
 
-  private getCircuitBreakerConfig(): CircuitBreakerConfig {
-    return this.config.circuitBreaker ?? CircuitBreakerUtils.getDefaultConfig();
+  /**
+   * Ultra-fast execution path for the common case (healthy system)
+   * Maintains observability while minimizing overhead
+   */
+  private async executeFastPath<T>(
+    operation: () => Promise<T>,
+    config: CircuitBreakerConfig,
+    opName: string,
+  ): Promise<T> {
+    // For the fast path, we still need to handle retry properly to maintain logging
+    const execOnce = async () => {
+      try {
+        const result = await operation();
+        // Only update state if there were previous failures
+        if (this.breakerState.consecutiveFailures > 0) {
+          CircuitBreakerUtils.onBreakerSuccess(this.breakerState, config, this.logger);
+        }
+        return result;
+      } catch (error) {
+        // Handle failure with full observability
+        CircuitBreakerUtils.onBreakerFailure(this.breakerState, config, this.logger);
+        throw ErrorUtils.wrapError(error);
+      }
+    };
+
+    // If retry is configured, use full retry path even in fast path
+    // This ensures logging and observability work correctly
+    if (this.hasRetryConfig) {
+      return RetryUtils.executeWithRetry(execOnce, this.config.retry!, opName, this.logger);
+    }
+
+    return execOnce();
   }
 }
