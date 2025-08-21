@@ -14,6 +14,9 @@ and this project adheres to
 
 - [Unreleased](#unreleased)
 - [Released Versions](#released-versions)
+  - [1.4.0 - 2025-08-20](#140---2025-08-20)
+  - [1.3.1 - 2025-08-12](#131---2025-08-12)
+  - [1.3.0 - 2025-08-12](#130---2025-08-12)
   - [1.2.1 - 2025-07-04](#121---2025-07-04)
   - [1.2.0 - 2025-07-04](#120---2025-07-04)
   - [1.1.1 - 2025-07-03](#111---2025-07-03)
@@ -62,6 +65,95 @@ and this project adheres to
 - **Security**: Enhanced security features and audit logging
 
 ## Released Versions
+
+### [1.4.0] - 2025-08-20
+
+> Focus: Utility classes extraction, performance optimizations, and
+> comprehensive testing suite
+
+#### Added
+
+- 🛠️ **Exported Utility Classes**: New public utilities for advanced usage
+
+  - `ErrorUtils`: Comprehensive error handling and categorization utilities
+  - `RetryUtils`: Configurable retry mechanisms for transient failures
+  - `CircuitBreakerUtils`: Circuit breaker pattern implementation with state
+    management
+  - `CircuitBreakerState` type: State interface for circuit breaker monitoring
+
+- 🧪 **Comprehensive Performance Testing Suite**: Complete benchmark
+  infrastructure
+
+  - Enhanced I/O benchmark with realistic testing configurations
+  - Load and stress testing capabilities
+  - Memory usage analysis and stability testing
+  - Resilience benchmarking for error scenarios
+
+- 📖 **Utilities Usage Example**: Practical demonstration of exported utility
+  classes
+  - `examples/07-utilities-usage.ts`: Complete guide for using utility classes
+  - Real-world patterns for error handling, retries, and circuit breakers
+
+#### Changed
+
+- 🚀 **Performance Optimizations**: I/O path improvements with fast execution
+
+  - Optimized I/O path with fast path execution and cached configurations
+  - Reduced overhead for simple database operations
+  - Enhanced connection management efficiency
+
+- 📦 **Dependency Optimization**: Native Node.js features adoption
+
+  - Removed `uuid` dependency in favor of native `crypto.randomUUID()`
+  - Reduced package size and external dependencies
+  - Improved compatibility with Node.js 18+ built-in features
+
+- 🏗️ **Code Organization**: Better modular structure
+
+  - Extracted utility classes for improved code organization
+  - Enhanced separation of concerns with dedicated utility modules
+  - Improved maintainability and testability
+
+- 📚 **Documentation Enhancements**: Comprehensive updates across all
+  documentation
+  - Updated README with detailed performance analysis and configuration guide
+  - Enhanced benchmark documentation with corrected performance data
+  - Restructured documentation with better organization and navigation
+  - Added performance benchmarks and documentation cross-links
+
+#### Fixed
+
+- 🔧 **Benchmark Configuration**: Realistic I/O testing setup
+  - Corrected enhanced-io-benchmark configuration for accurate results
+  - Fixed benchmark parameters for more realistic performance testing
+  - Improved statistical accuracy in performance measurements
+
+#### Performance Improvements
+
+- **I/O Operations**: Faster execution with optimized path and cached configs
+- **Memory Usage**: Reduced footprint with native Node.js features
+- **Package Size**: Smaller distribution with dependency removal
+- **Testing**: More comprehensive and accurate performance benchmarks
+
+#### Breaking Changes
+
+- None (backward compatible)
+
+#### Migration Guide
+
+- **New Utility Classes**: Start using exported utilities for advanced
+  scenarios:
+
+  ```typescript
+  import { ErrorUtils, RetryUtils, CircuitBreakerUtils } from 'pg-parallel';
+
+  // Use utility classes for custom error handling
+  const errorCategory = ErrorUtils.categorizeError(error);
+  const retryConfig = RetryUtils.createExponentialBackoff(3, 1000);
+  const circuitBreaker = new CircuitBreakerUtils(breakerConfig);
+  ```
+
+---
 
 ### [1.3.1] - 2025-08-12
 
@@ -628,7 +720,8 @@ and this project adheres to
 
 ## Version Links
 
-- [Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.3.1...HEAD
+- [Unreleased]: https://github.com/j-givisiez/pg-parallel/compare/v1.4.0...HEAD
+- [1.4.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.3.1...v1.4.0
 - [1.3.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.3.0...v1.3.1
 - [1.3.0]: https://github.com/j-givisiez/pg-parallel/compare/v1.2.1...v1.3.0
 - [1.2.1]: https://github.com/j-givisiez/pg-parallel/compare/v1.2.0...v1.2.1
