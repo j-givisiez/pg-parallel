@@ -16,6 +16,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "docs",
     "README.md"
   ],
   "scripts": {
@@ -28,6 +29,12 @@
     "test:dist": "npm run build && node dist-test.js",
     "benchmark": "ts-node src/benchmarks/benchmark.ts",
     "benchmark:10": "ts-node src/benchmarks/benchmark-10-runs.ts",
+    "benchmark:enhanced": "ts-node src/benchmarks/enhanced-io-benchmark.ts",
+    "benchmark:load": "ts-node src/benchmarks/load-stress-test.ts",
+    "benchmark:resilience": "ts-node src/benchmarks/resilience-benchmark.ts",
+    "benchmark:comprehensive": "ts-node src/benchmarks/comprehensive-benchmark.ts",
+    "benchmark:memory": "ts-node src/benchmarks/load-stress-test.ts memory",
+    "benchmark:stability": "ts-node src/benchmarks/load-stress-test.ts stability 10",
     "deploy": "npm run build && npm publish"
   },
   "keywords": [

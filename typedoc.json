@@ -1,6 +1,6 @@
 {
   "entryPoints": ["src/index.ts"],
-  "out": "docs",
+  "out": "dev-docs",
   "excludePrivate": true,
   "excludeInternal": true,
   "tsconfig": "tsconfig.json"
