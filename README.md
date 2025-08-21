@@ -36,6 +36,7 @@ by offloading heavy CPU tasks and complex transactions to worker threads.
   - [Self-Contained Functions](#self-contained-functions)
   - [Utility Classes](#utility-classes)
 - [Performance](#performance)
+- [Performance and Benchmarks](#performance-and-benchmarks)
 - [When to Use](#when-to-use)
 - [Troubleshooting](#troubleshooting)
   - [Common Issues](#common-issues)
@@ -649,13 +650,48 @@ await db.worker(async (client) => {
 });
 ```
 
+## Performance and Benchmarks
+
+pg-parallel is optimized for reliability and mixed workloads. For detailed
+performance analysis:
+
+- **[Benchmark System Documentation](./docs/benchmark-improvements.md)** -
+  Technical details of our benchmarking methodology
+- **[Performance Comparison Summary](./docs/performance-comparison.md)** -
+  Comprehensive comparison with pg.Pool
+
+### Key Performance Insights
+
+| Scenario        | pg-parallel   | pg.Pool        | pg-parallel Advantages                |
+| --------------- | ------------- | -------------- | ------------------------------------- |
+| **Light Load**  | 9,378 ops/sec | 12,876 ops/sec | Zero errors, Circuit breaker          |
+| **Medium Load** | 8,277 ops/sec | 14,308 ops/sec | Zero errors, Retry logic              |
+| **Heavy Load**  | 5,167 ops/sec | 13,493 ops/sec | **Zero errors** vs 467 errors (4.67%) |
+
+**Key Takeaway**: pg-parallel trades ~27-62% raw I/O speed for **100%
+reliability** and **zero errors** under load.
+
+### Production Best Practices
+
+```typescript
+// Always warmup in production for optimal performance
+const db = new PgParallel(config);
+await db.warmup(); // Critical for performance!
+
+// Use appropriate methods for workload type
+await db.query(sql); // I/O with circuit breaker + retry
+await db.task(fn); // CPU-intensive in worker thread
+await db.worker(fn); // Mixed I/O + CPU workload
+```
+
 ### Getting Help
 
 If you encounter issues not covered here:
 
 1. Check the [GitHub Issues](https://github.com/j-givisiez/pg-parallel/issues)
 2. Review the [examples directory](./examples/) for working code
-3. Open a new issue with a minimal reproduction case
+3. Check the [Performance Documentation](./docs/benchmark-improvements.md)
+4. Open a new issue with a minimal reproduction case
 
 ## Third-party Licenses
 
