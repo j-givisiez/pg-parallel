@@ -19,9 +19,9 @@ const runEnhancedIOBenchmark = async () => {
   console.log('=====================================');
 
   const scenarios = [
-    { name: 'Light Load', operations: 1000, concurrency: 10 },
-    { name: 'Medium Load', operations: 5000, concurrency: 50 },
-    { name: 'Heavy Load', operations: 10000, concurrency: 100 },
+    { name: 'Light Load', operations: 1000, maxWorkers: 1 },
+    { name: 'Medium Load', operations: 5000, maxWorkers: 1 },
+    { name: 'Heavy Load', operations: 10000, maxWorkers: 1 },
   ];
 
   for (const scenario of scenarios) {
@@ -31,49 +31,60 @@ const runEnhancedIOBenchmark = async () => {
     // Create and warmup pg-parallel instance ONCE
     const db = new PgParallel({
       connectionString: process.env.DATABASE_URL!,
-      max: Math.min(scenario.concurrency + 10, 100),
-      maxWorkers: Math.min(4, Math.ceil(scenario.concurrency / 25)), // More workers for higher concurrency
+      max: 50, // Reasonable pool size to avoid connection limits
+      maxWorkers: scenario.maxWorkers, // Optimal for I/O testing
     });
 
     console.log('Warming up pg-parallel...');
     await db.warmup(); // Critical warmup step!
 
-    // Test pg-parallel with pre-warmed instance
-    const pgParallelMetrics = await PerformanceBenchmark.runBenchmark(
-      {
-        name: `pg-parallel I/O - ${scenario.name}`,
-        operations: scenario.operations,
-        concurrency: scenario.concurrency,
-        warmupOps: Math.min(100, scenario.operations / 10),
-        trackMemory: true,
-      },
-      async () => {
-        await db.query('SELECT 1 as test_value, NOW() as current_time');
-      },
-    );
+    // Test pg-parallel with batched execution to avoid overwhelming the database
+    console.log(`Testing pg-parallel with ${scenario.operations} operations...`);
+    const pgParallelStart = Date.now();
 
-    // Create and pre-warm pg.Pool instance ONCE for fair comparison
+    const batchSize = 100;
+    const batches = Math.ceil(scenario.operations / batchSize);
+
+    for (let i = 0; i < batches; i++) {
+      const batchOps = Math.min(batchSize, scenario.operations - i * batchSize);
+      await Promise.all(
+        Array.from({ length: batchOps }, () => db.query('SELECT 1 as test_value, NOW() as current_time')),
+      );
+    }
+
+    const pgParallelTime = (Date.now() - pgParallelStart) / 1000;
+    const pgParallelThroughput = scenario.operations / pgParallelTime;
+
+    // Create and test pg.Pool instance for fair comparison
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL!,
-      max: Math.min(scenario.concurrency + 10, 100),
+      max: 50, // Same pool size as pg-parallel
     });
 
-    // Test standard pg.Pool for comparison
-    const pgPoolMetrics = await PerformanceBenchmark.runBenchmark(
-      {
-        name: `pg.Pool I/O - ${scenario.name}`,
-        operations: scenario.operations,
-        concurrency: scenario.concurrency,
-        warmupOps: Math.min(100, scenario.operations / 10),
-        trackMemory: true,
-      },
-      async () => {
-        await pool.query('SELECT 1 as test_value, NOW() as current_time');
-      },
-    );
+    console.log(`Testing pg.Pool with ${scenario.operations} operations...`);
+    const pgPoolStart = Date.now();
 
-    // Compare results
-    PerformanceBenchmark.compareMetrics(pgPoolMetrics, pgParallelMetrics, 'pg.Pool', 'pg-parallel');
+    for (let i = 0; i < batches; i++) {
+      const batchOps = Math.min(batchSize, scenario.operations - i * batchSize);
+      await Promise.all(
+        Array.from({ length: batchOps }, () => pool.query('SELECT 1 as test_value, NOW() as current_time')),
+      );
+    }
+
+    const pgPoolTime = (Date.now() - pgPoolStart) / 1000;
+    const pgPoolThroughput = scenario.operations / pgPoolTime;
+
+    // Display results
+    console.log(`\n=== ${scenario.name} Results ===`);
+    console.log(`pg-parallel: ${pgParallelTime.toFixed(3)}s (${pgParallelThroughput.toFixed(0)} ops/sec)`);
+    console.log(`pg.Pool:     ${pgPoolTime.toFixed(3)}s (${pgPoolThroughput.toFixed(0)} ops/sec)`);
+
+    const improvement = ((pgPoolTime - pgParallelTime) / pgPoolTime) * 100;
+    if (improvement > 0) {
+      console.log(`pg-parallel is ${improvement.toFixed(1)}% faster`);
+    } else {
+      console.log(`pg.Pool is ${Math.abs(improvement).toFixed(1)}% faster`);
+    }
 
     // Cleanup instances
     await db.shutdown();
@@ -91,7 +102,7 @@ const runConnectionStressTest = async () => {
   const db = new PgParallel({
     connectionString: process.env.DATABASE_URL!,
     max: 20,
-    maxWorkers: 4, // Use more workers for stress test
+    maxWorkers: 1, // Use minimal workers for I/O stress test
   });
 
   console.log('Warming up for stress test...');
